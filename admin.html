@@ -244,7 +244,7 @@
             </div>
           </div>
           <table class="sharing-table" id="sharing-table">
-            <thead><tr><th>Email</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>Email</th><th></th></tr></thead>
             <tbody id="sharing-tbody"></tbody>
           </table>
         </div>
@@ -504,7 +504,10 @@
       }
       tbody.innerHTML = sharedWith.map((e, i) => {
         const email = typeof e === 'string' ? e : e.email;
-        return `<tr><td style="font-family:var(--font-mono);font-size:12px">${escHtml(email)}</td>
+        const user = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+        const name = user ? (user.name || '—') : '—';
+        return `<tr><td>${escHtml(name)}</td>
+          <td style="font-family:var(--font-mono);font-size:12px">${escHtml(email)}</td>
           <td><button class="remove-btn" onclick="removeShare(${i})" title="Remove">✕</button></td></tr>`;
       }).join('');
     }
