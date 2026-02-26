@@ -705,9 +705,11 @@
       }
 
       // Shared collections
-      const collectionsToShow = activeFilter === 'all' || activeFilter === '__personal__'
+      const collectionsToShow = activeFilter === 'all'
         ? allCollections
-        : allCollections.filter(c => c.id === activeFilter);
+        : activeFilter === '__personal__'
+          ? []
+          : allCollections.filter(c => c.id === activeFilter);
 
       for (const col of collectionsToShow) {
         const links = query
