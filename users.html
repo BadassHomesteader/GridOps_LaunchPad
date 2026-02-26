@@ -170,8 +170,8 @@
       <table class="data-table" id="users-table">
         <thead>
           <tr>
-            <th class="sortable" data-col="email" onclick="setSort('email')">Email<span class="sort-arrow"></span></th>
             <th class="sortable" data-col="name" onclick="setSort('name')">Name<span class="sort-arrow on"> ▲</span></th>
+            <th class="sortable" data-col="email" onclick="setSort('email')">Email<span class="sort-arrow"></span></th>
             <th class="sortable" data-col="role" onclick="setSort('role')">Role<span class="sort-arrow"></span></th>
             <th class="sortable" data-col="status" onclick="setSort('status')">Status<span class="sort-arrow"></span></th>
             <th></th>
@@ -329,8 +329,8 @@
         const isActive = u.active !== false;
         return `
           <tr ondblclick="openEditModal('${escHtml(u.email)}')" title="Double-click to edit">
-            <td style="font-family:var(--font-mono);font-size:12px">${escHtml(u.email)}</td>
             <td>${escHtml(u.name || '')}</td>
+            <td style="font-family:var(--font-mono);font-size:12px">${escHtml(u.email)}</td>
             <td>
               <select onchange="changeRole('${escHtml(u.email)}', this.value)">
                 <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
