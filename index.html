@@ -386,6 +386,21 @@
     </div>
   </div>
 
+  <!-- Work use / disclosure modal -->
+  <div class="modal-overlay active" id="disclosure-modal">
+    <div class="modal" style="max-width:480px">
+      <div style="font-size:2rem;margin-bottom:0.75rem">🔒</div>
+      <div class="modal-title">Before you continue</div>
+      <div style="font-size:0.875rem;color:var(--color-text-secondary);line-height:1.65;display:flex;flex-direction:column;gap:0.75rem">
+        <p><strong style="color:var(--color-text)">Work use only.</strong> GridOps LaunchPad is a company tool intended for business use. Do not store personal, confidential, or sensitive information.</p>
+        <p><strong style="color:var(--color-text)">Admin visibility.</strong> Your <em>My Links</em> section is visible to application administrators for support and compliance purposes. It is not shared with other users.</p>
+      </div>
+      <div style="margin-top:1.5rem;display:flex;justify-content:flex-end">
+        <button class="btn btn-primary" onclick="acknowledgeDisclosure()">I understand</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Add / Edit personal link modal -->
   <div class="modal-overlay" id="link-modal">
     <div class="modal">
@@ -894,8 +909,20 @@
       return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
+    // ── Disclosure ───────────────────────────────────────────────────────
+    function acknowledgeDisclosure() {
+      localStorage.setItem('gridops-disclosure-ack', '1');
+      document.getElementById('disclosure-modal').classList.remove('active');
+    }
+
+    function initDisclosure() {
+      if (localStorage.getItem('gridops-disclosure-ack')) {
+        document.getElementById('disclosure-modal').classList.remove('active');
+      }
+    }
+
     // ── Boot ─────────────────────────────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', initAuth);
+    document.addEventListener('DOMContentLoaded', () => { initDisclosure(); initAuth(); });
   </script>
 </body>
 </html>
