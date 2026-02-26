@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GridOps LaunchPad — Feedback</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+  <style>
+    :root {
+      --bg: #f0f4f8; --surface: #ffffff; --surface2: #eaeff5;
+      --border: #d0d8e4; --border-light: #b8c4d4;
+      --text: #0f172a; --text-dim: #4b5a6e; --text-muted: #8898a8;
+      --accent: #0078d4; --accent-dim: rgba(0,120,212,0.1);
+      --danger: #dc2626; --danger-dim: rgba(220,38,38,0.1);
+      --green: #16a34a; --green-dim: rgba(22,163,74,0.1);
+      --orange: #d97706; --orange-dim: rgba(217,119,6,0.1);
+      --row-hover: rgba(0,120,212,0.04);
+      --font-mono: 'IBM Plex Mono', monospace; --font-sans: 'IBM Plex Sans', sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-sans); background: var(--bg); color: var(--text); font-size: 13px; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+    .header { display: flex; align-items: center; gap: 12px; padding: 10px 24px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .header-brand { font-family: var(--font-mono); font-weight: 600; font-size: 14px; color: var(--accent); letter-spacing: -0.5px; }
+    .header-brand span { color: var(--text-dim); font-weight: 400; }
+    .header-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    .header-sep { width: 1px; height: 24px; background: var(--border); }
+    .header-spacer { flex: 1; }
+    .back-link { font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 500; }
+    .back-link:hover { text-decoration: underline; }
+    .signin-btn { background: var(--accent); border: 1px solid var(--accent); color: #fff; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-family: var(--font-sans); font-size: 12px; font-weight: 500; }
+    .user-info { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 11px; }
+    .user-email { color: var(--text-dim); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+    .signout-btn:hover { background: var(--danger-dim); color: var(--danger); border-color: var(--danger); }
+
+    .state-msg { text-align: center; padding: 80px 24px; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .state-msg h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .state-msg p { font-size: 13px; color: var(--text-dim); }
+
+    .main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 20px 24px; }
+
+    .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-shrink: 0; }
+    .toolbar-title { font-size: 14px; font-weight: 600; }
+    .filter-group { display: flex; gap: 6px; flex: 1; }
+    .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); padding: 4px 12px; border-radius: 20px; cursor: pointer; font-family: var(--font-sans); font-size: 12px; font-weight: 500; transition: all 0.15s; }
+    .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .count-badge { background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); padding: 4px 10px; border-radius: 4px; font-size: 12px; }
+
+    .table-wrap { flex: 1; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { position: sticky; top: 0; background: #eaeff5; border-bottom: 2px solid var(--border); padding: 8px 12px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); text-align: left; z-index: 1; }
+    td { border-bottom: 1px solid var(--border); padding: 10px 12px; font-size: 12px; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--row-hover); cursor: pointer; }
+
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .badge-open { background: var(--accent-dim); color: var(--accent); }
+    .badge-in_progress { background: var(--orange-dim); color: var(--orange); }
+    .badge-resolved { background: var(--green-dim); color: var(--green); }
+    .badge-closed { background: var(--surface2); color: var(--text-muted); }
+    .badge-bug { background: var(--danger-dim); color: var(--danger); }
+    .badge-feature { background: var(--accent-dim); color: var(--accent); }
+    .badge-general { background: var(--surface2); color: var(--text-dim); }
+    .badge-high { background: var(--danger-dim); color: var(--danger); }
+    .badge-medium { background: var(--orange-dim); color: var(--orange); }
+    .badge-low { background: var(--surface2); color: var(--text-muted); }
+
+    .title-cell { font-weight: 500; color: var(--text); }
+    .meta-cell { color: var(--text-muted); font-size: 11px; }
+    .empty-state { text-align: center; padding: 48px; color: var(--text-muted); font-size: 13px; }
+
+    /* Detail panel */
+    .detail-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; }
+    .detail-overlay.active { display: flex; }
+    .detail-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; width: 520px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+    .detail-header { display: flex; align-items: flex-start; gap: 12px; padding: 20px 20px 16px; border-bottom: 1px solid var(--border); }
+    .detail-title { font-size: 15px; font-weight: 600; flex: 1; line-height: 1.4; }
+    .detail-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 4px; border-radius: 3px; flex-shrink: 0; }
+    .detail-close:hover { background: var(--surface2); color: var(--text); }
+    .detail-body { padding: 16px 20px; }
+    .detail-row { display: flex; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+    .detail-field { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 120px; }
+    .detail-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+    .detail-value { font-size: 12px; color: var(--text); }
+    .detail-desc { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; font-size: 12px; color: var(--text); line-height: 1.6; white-space: pre-wrap; margin-bottom: 16px; min-height: 60px; }
+    .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding-top: 12px; border-top: 1px solid var(--border); }
+    .detail-label-inline { font-size: 11px; color: var(--text-dim); font-weight: 500; }
+    select.detail-select { padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--font-sans); font-size: 12px; color: var(--text); background: var(--surface); cursor: pointer; }
+    .btn { padding: 6px 14px; border-radius: 4px; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--text-dim); transition: all 0.15s; }
+    .btn:hover { background: var(--border); color: var(--text); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    .btn.primary:hover { background: #005a9e; }
+    .btn.danger { color: var(--danger); }
+    .btn.danger:hover { background: var(--danger-dim); border-color: var(--danger); }
+    .note-input { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--font-sans); font-size: 12px; color: var(--text); background: var(--surface); resize: vertical; min-height: 60px; margin-bottom: 10px; }
+    .note-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,120,212,0.15); }
+
+    .toast { position: fixed; bottom: 20px; right: 20px; background: var(--text); color: white; padding: 10px 16px; border-radius: 6px; font-size: 12px; font-weight: 500; z-index: 999; display: none; animation: slideUp 0.2s ease; }
+    @keyframes slideUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-brand">GridOps <span>LaunchPad</span></div>
+    <div class="header-sep"></div>
+    <div class="header-title">Feedback</div>
+    <div class="header-spacer"></div>
+    <a href="users.html" class="back-link">Manage Users</a>
+    <div class="header-sep"></div>
+    <a href="admin.html" class="back-link">Collections</a>
+    <div class="header-sep"></div>
+    <a href="index.html" class="back-link">← Back to LaunchPad</a>
+    <div class="header-sep"></div>
+    <div id="auth-area"><button class="signin-btn" onclick="signIn()">Sign in</button></div>
+  </div>
+
+  <div id="loading" class="state-msg"><h2>Loading...</h2></div>
+  <div id="access-denied" class="state-msg" style="display:none"><h2>Access Denied</h2><p>Admin role required.</p></div>
+
+  <div class="main" id="main-ui" style="display:none">
+    <div class="toolbar">
+      <div class="toolbar-title">All Feedback</div>
+      <div class="filter-group">
+        <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
+        <button class="filter-btn" data-filter="open" onclick="setFilter('open')">Open</button>
+        <button class="filter-btn" data-filter="in_progress" onclick="setFilter('in_progress')">In Progress</button>
+        <button class="filter-btn" data-filter="resolved" onclick="setFilter('resolved')">Resolved</button>
+        <button class="filter-btn" data-filter="closed" onclick="setFilter('closed')">Closed</button>
+      </div>
+      <div class="count-badge" id="count-badge">0 items</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40%">Title</th>
+            <th>Type</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Submitted By</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="feedback-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Detail panel -->
+  <div class="detail-overlay" id="detail-overlay">
+    <div class="detail-panel">
+      <div class="detail-header">
+        <div class="detail-title" id="dp-title"></div>
+        <button class="detail-close" onclick="closeDetail()">✕</button>
+      </div>
+      <div class="detail-body">
+        <div class="detail-row">
+          <div class="detail-field">
+            <div class="detail-label">Status</div>
+            <div class="detail-value" id="dp-status"></div>
+          </div>
+          <div class="detail-field">
+            <div class="detail-label">Type</div>
+            <div class="detail-value" id="dp-type"></div>
+          </div>
+          <div class="detail-field">
+            <div class="detail-label">Priority</div>
+            <div class="detail-value" id="dp-priority"></div>
+          </div>
+          <div class="detail-field">
+            <div class="detail-label">Area</div>
+            <div class="detail-value" id="dp-area"></div>
+          </div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-field">
+            <div class="detail-label">Submitted By</div>
+            <div class="detail-value" id="dp-reporter"></div>
+          </div>
+          <div class="detail-field">
+            <div class="detail-label">Date</div>
+            <div class="detail-value" id="dp-date"></div>
+          </div>
+        </div>
+        <div class="detail-label" style="margin-bottom:6px">Description</div>
+        <div class="detail-desc" id="dp-desc"></div>
+        <div class="detail-label" style="margin-bottom:6px">Admin Note</div>
+        <textarea class="note-input" id="dp-note" placeholder="Add an internal note..."></textarea>
+        <div class="detail-actions">
+          <span class="detail-label-inline">Status:</span>
+          <select class="detail-select" id="dp-status-select">
+            <option value="open">Open</option>
+            <option value="in_progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+          </select>
+          <button class="btn primary" onclick="saveDetail()">Save</button>
+          <button class="btn danger" onclick="deleteDetail()">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const MSAL_CONFIG = {
+      auth: { clientId: 'f6fd7b3b-9232-4f47-b244-7a589e0f9289', authority: 'https://login.microsoftonline.com/3403d6b3-2983-4d92-ad10-3dbe39a3e0ad', redirectUri: window.location.origin },
+      cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: false }
+    };
+    const TOKEN_REQUEST = { scopes: ['openid', 'profile', 'email', 'User.Read'] };
+    let msalInstance, authToken;
+
+    async function initAuth() {
+      msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+      await msalInstance.initialize();
+      const res = await msalInstance.handleRedirectPromise();
+      if (res) { authToken = res.idToken; await boot(); return; }
+      const accounts = msalInstance.getAllAccounts();
+      if (accounts.length > 0) {
+        try {
+          const r = await msalInstance.acquireTokenSilent({ ...TOKEN_REQUEST, account: accounts[0] });
+          authToken = r.idToken; await boot();
+        } catch { msalInstance.loginRedirect(TOKEN_REQUEST); }
+      } else { msalInstance.loginRedirect(TOKEN_REQUEST); }
+    }
+    function signIn() { msalInstance.loginRedirect(TOKEN_REQUEST); }
+    async function signOut() { await msalInstance.logoutRedirect(); }
+
+    function hdrs() { return { 'Content-Type': 'application/json', 'X-Auth-Token': authToken }; }
+    async function apiGet(p) { const r = await fetch('/api' + p, { headers: hdrs() }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
+    async function apiPut(p, b) { const r = await fetch('/api' + p, { method: 'PUT', headers: hdrs(), body: JSON.stringify(b) }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
+    async function apiDel(p) { const r = await fetch('/api' + p, { method: 'DELETE', headers: hdrs() }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
+
+    let allItems = [];
+    let activeFilter = 'all';
+    let activeItemId = null;
+
+    async function boot() {
+      try {
+        const me = await apiGet('/me');
+        if (me.role !== 'admin') {
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('access-denied').style.display = 'flex';
+          return;
+        }
+        const initials = (me.name || me.email).split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        document.getElementById('auth-area').innerHTML = `
+          <div class="user-info">
+            <div class="user-avatar">${initials}</div>
+            <span class="user-email">${me.email}</span>
+            <button class="signout-btn" onclick="signOut()">Sign out</button>
+          </div>`;
+        await loadFeedback();
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('main-ui').style.display = 'flex';
+      } catch (err) {
+        document.getElementById('loading').innerHTML = `<h2>Error</h2><p>${err.message}</p>`;
+      }
+    }
+
+    async function loadFeedback() {
+      const data = await apiGet('/feedback');
+      allItems = data.items || [];
+      renderTable();
+    }
+
+    function setFilter(f) {
+      activeFilter = f;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+      renderTable();
+    }
+
+    function filtered() {
+      return activeFilter === 'all' ? allItems : allItems.filter(i => i.status === activeFilter);
+    }
+
+    function renderTable() {
+      const items = filtered();
+      const badge = document.getElementById('count-badge');
+      badge.textContent = `${items.length} item${items.length !== 1 ? 's' : ''}`;
+      const tbody = document.getElementById('feedback-tbody');
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No feedback here yet.</div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = items.map(item => `
+        <tr onclick="openDetail('${item.id}')">
+          <td>
+            <div class="title-cell">${escHtml(item.title)}</div>
+            ${item.area ? `<div class="meta-cell">${escHtml(item.area)}</div>` : ''}
+          </td>
+          <td><span class="badge badge-${item.type || 'general'}">${escHtml(item.type || 'general')}</span></td>
+          <td><span class="badge badge-${item.priority || 'medium'}">${escHtml(item.priority || 'medium')}</span></td>
+          <td><span class="badge badge-${item.status}">${statusLabel(item.status)}</span></td>
+          <td>
+            <div>${escHtml(item.reportedBy || item.reportedByEmail || '')}</div>
+            <div class="meta-cell">${escHtml(item.reportedByEmail || '')}</div>
+          </td>
+          <td class="meta-cell">${formatDate(item.createdAt)}</td>
+        </tr>`).join('');
+    }
+
+    function openDetail(id) {
+      const item = allItems.find(i => i.id === id);
+      if (!item) return;
+      activeItemId = id;
+      document.getElementById('dp-title').textContent = item.title;
+      document.getElementById('dp-status').innerHTML = `<span class="badge badge-${item.status}">${statusLabel(item.status)}</span>`;
+      document.getElementById('dp-type').innerHTML = `<span class="badge badge-${item.type || 'general'}">${item.type || 'general'}</span>`;
+      document.getElementById('dp-priority').innerHTML = `<span class="badge badge-${item.priority || 'medium'}">${item.priority || 'medium'}</span>`;
+      document.getElementById('dp-area').textContent = item.area || '—';
+      document.getElementById('dp-reporter').textContent = `${item.reportedBy || ''} <${item.reportedByEmail || ''}>`;
+      document.getElementById('dp-date').textContent = formatDate(item.createdAt);
+      document.getElementById('dp-desc').textContent = item.description || '(no description)';
+      document.getElementById('dp-note').value = item.note || '';
+      document.getElementById('dp-status-select').value = item.status;
+      document.getElementById('detail-overlay').classList.add('active');
+    }
+
+    function closeDetail() {
+      document.getElementById('detail-overlay').classList.remove('active');
+      activeItemId = null;
+    }
+
+    async function saveDetail() {
+      if (!activeItemId) return;
+      const status = document.getElementById('dp-status-select').value;
+      const note = document.getElementById('dp-note').value.trim();
+      try {
+        const updated = await apiPut(`/feedback/${activeItemId}`, { status, note });
+        const idx = allItems.findIndex(i => i.id === activeItemId);
+        if (idx >= 0) allItems[idx] = { ...allItems[idx], ...updated };
+        renderTable();
+        closeDetail();
+        toast('Feedback updated');
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    async function deleteDetail() {
+      if (!activeItemId || !confirm('Delete this feedback item?')) return;
+      try {
+        await apiDel(`/feedback/${activeItemId}`);
+        allItems = allItems.filter(i => i.id !== activeItemId);
+        renderTable();
+        closeDetail();
+        toast('Deleted');
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    function statusLabel(s) {
+      return { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed' }[s] || s;
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '';
+      return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.style.display = 'block';
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => { el.style.display = 'none'; }, 2000);
+    }
+
+    document.getElementById('detail-overlay').addEventListener('click', e => {
+      if (e.target === document.getElementById('detail-overlay')) closeDetail();
+    });
+
+    document.addEventListener('DOMContentLoaded', initAuth);
+  </script>
+</body>
+</html>
