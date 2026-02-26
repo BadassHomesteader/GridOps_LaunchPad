@@ -437,7 +437,7 @@
       tbody.innerHTML = links.map((l, i) => {
         let iconHtml = '';
         if (l.icon && window.ICONS[l.icon]) {
-          iconHtml = `<span style="display:inline-flex;align-items:center;margin-right:6px;color:var(--text-dim);vertical-align:middle">${renderIcon(l.icon, 14)}</span>`;
+          iconHtml = `<span style="display:inline-flex;align-items:center;margin-right:6px;color:var(--text-dim);vertical-align:middle">${window.renderIcon ? window.renderIcon(l.icon, 14) : ''}</span>`;
         } else if (l.icon) {
           iconHtml = `<span style="font-size:13px;margin-right:6px;vertical-align:middle">${escHtml(l.icon)}</span>`;
         } else {
@@ -705,24 +705,20 @@
       const keys = Object.keys(window.ICONS).filter(k => !filter || k.includes(filter.toLowerCase()) || (window.ICON_LABELS[k]||'').toLowerCase().includes(filter.toLowerCase()));
       grid.innerHTML = keys.map(k => {
         const sel = k === currentVal ? ' selected' : '';
-        return `<button type="button" class="icon-opt${sel}" data-key="${k}" title="${window.ICON_LABELS[k]||k}">${renderIcon(k,16)}</button>`;
+        return `<button type="button" class="icon-opt${sel}" data-key="${k}" title="${window.ICON_LABELS[k]||k}">${window.renderIcon ? window.renderIcon(k,16) : ''}</button>`;
       }).join('');
       grid.querySelectorAll('.icon-opt').forEach(btn => {
         btn.addEventListener('click', () => selectIcon(btn.dataset.key));
       });
     }
 
-    function renderIcon(key, size = 18) {
-      return window.renderIcon ? window.renderIcon(key, size) : '';
-    }
-
     function setTriggerIcon(btnId, key) {
       const btn = document.getElementById(btnId);
       if (!btn) return;
       if (key && window.ICONS && window.ICONS[key]) {
-        btn.innerHTML = renderIcon(key, 18);
+        btn.innerHTML = window.renderIcon ? window.renderIcon(key, 18) : '';
       } else {
-        btn.innerHTML = renderIcon('link', 18);
+        btn.innerHTML = window.renderIcon ? window.renderIcon('link', 18) : '';
       }
     }
 
