@@ -162,8 +162,7 @@
       background: var(--color-surface); border-radius: 4px;
     }
 
-    .sidebar-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--color-border); }
-    .user-row { display: flex; align-items: center; gap: 0.625rem; margin-bottom: 0.75rem; }
+    .sidebar-footer { padding: 0.75rem 1rem; border-top: 1px solid var(--color-border); position: relative; }
     .user-avatar {
       width: 30px; height: 30px; border-radius: 50%;
       background: var(--gradient-accent); color: white;
@@ -173,21 +172,34 @@
     .user-info-block { flex: 1; min-width: 0; }
     .user-name { font-size: 0.8125rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .user-email { font-size: 0.7rem; color: var(--color-text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .footer-actions { display: flex; gap: 0.5rem; }
-    #admin-links { flex: 1; display: flex; }
-    #admin-links .footer-btn { flex: 1; width: 100%; }
-    .footer-btn {
-      flex: 1; padding: 0.4375rem 0.625rem;
-      background: var(--color-surface); border: 1px solid var(--color-border);
-      border-radius: var(--radius-sm); color: var(--color-text-secondary);
-      font: inherit; font-size: 0.75rem; font-weight: 500;
-      cursor: pointer; transition: all var(--transition-fast);
-      display: flex; align-items: center; justify-content: center; gap: 0.375rem;
-      white-space: nowrap;
+    .user-menu-btn {
+      display: flex; align-items: center; gap: 0.625rem; width: 100%;
+      padding: 0.5rem 0.625rem; background: none; border: 1px solid transparent;
+      border-radius: var(--radius-sm); cursor: pointer; text-align: left;
+      transition: all var(--transition-fast);
     }
-    .footer-btn:hover { background: var(--color-surface-hover); border-color: var(--color-border-hover); color: var(--color-text); }
-    .footer-btn.accent { background: var(--color-accent-glow); border-color: rgba(0,120,212,0.25); color: var(--color-accent); }
-    .footer-btn.accent:hover { background: rgba(0,120,212,0.18); }
+    .user-menu-btn:hover { background: var(--color-surface-hover); border-color: var(--color-border); }
+    .user-menu-btn.open { background: var(--color-surface-hover); border-color: var(--color-border); }
+    .user-chevron { flex-shrink: 0; color: var(--color-text-tertiary); margin-left: auto; transition: transform 0.2s ease; }
+    .user-menu-btn.open .user-chevron { transform: rotate(180deg); }
+    .user-menu {
+      position: absolute; bottom: calc(100% + 4px); left: 0.75rem; right: 0.75rem;
+      background: var(--color-bg-elevated); border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg); padding: 0.375rem 0;
+      box-shadow: 0 -8px 24px -4px rgba(0,0,0,0.12), 0 -2px 8px rgba(0,0,0,0.06);
+      display: none; z-index: 100;
+    }
+    .user-menu.open { display: block; }
+    .menu-divider { height: 1px; background: var(--color-border); margin: 0.25rem 0; }
+    .menu-item {
+      display: flex; align-items: center; gap: 0.5rem; width: 100%;
+      padding: 0.5625rem 0.875rem; background: none; border: none;
+      font: inherit; font-size: 0.8rem; font-weight: 500;
+      color: var(--color-text-secondary); cursor: pointer; text-align: left;
+      transition: background var(--transition-fast), color var(--transition-fast);
+    }
+    .menu-item:hover { background: var(--color-surface-hover); color: var(--color-text); }
+    .menu-item.danger:hover { background: #fee2e2; color: #dc2626; }
     #admin-links { display: none; }
 
     /* ── Main content ── */
@@ -374,26 +386,28 @@
           <ul class="nav-list" id="nav-list"></ul>
         </div>
         <div class="sidebar-footer">
-          <div class="user-row">
+          <button class="user-menu-btn" id="user-menu-btn" onclick="toggleUserMenu()">
             <div class="user-avatar" id="user-avatar">?</div>
             <div class="user-info-block">
               <div class="user-name" id="user-name">Loading...</div>
               <div class="user-email" id="user-email"></div>
             </div>
-          </div>
-          <div class="footer-actions">
-            <button class="footer-btn accent" onclick="openFeedbackModal()" title="Send feedback">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <svg class="user-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+          </button>
+          <div class="user-menu" id="user-menu">
+            <button class="menu-item" onclick="openFeedbackModal(); closeUserMenu()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               Feedback
             </button>
             <div id="admin-links">
-              <button class="footer-btn" onclick="window.location.href='admin.html'" title="Manage categories">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+              <button class="menu-item" onclick="window.location.href='admin.html'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
                 Admin
               </button>
             </div>
-            <button class="footer-btn" onclick="signOut()">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            <div class="menu-divider"></div>
+            <button class="menu-item danger" onclick="signOut()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
               Sign out
             </button>
           </div>
@@ -905,6 +919,21 @@
         renderContent();
       }
     }
+
+    // ── User menu ────────────────────────────────────────────────────────
+    function toggleUserMenu() {
+      const menu = document.getElementById('user-menu');
+      const btn = document.getElementById('user-menu-btn');
+      const open = menu.classList.toggle('open');
+      btn.classList.toggle('open', open);
+    }
+    function closeUserMenu() {
+      document.getElementById('user-menu').classList.remove('open');
+      document.getElementById('user-menu-btn').classList.remove('open');
+    }
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#user-menu-btn') && !e.target.closest('#user-menu')) closeUserMenu();
+    });
 
     // ── Feedback ─────────────────────────────────────────────────────────
     let feedbackType = 'general';
