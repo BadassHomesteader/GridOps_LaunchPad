@@ -1,0 +1,15 @@
+{
+  "routes": [
+    {
+      "route": "/api/*",
+      "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      "allowedRoles": ["anonymous"]
+    }
+  ],
+  "globalHeaders": {
+    "Cache-Control": "no-cache, no-store, must-revalidate"
+  },
+  "mimeTypes": {
+    ".json": "application/json"
+  }
+}

@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GridOps LaunchPad</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+  <style>
+    :root {
+      --color-bg: #f0f4f8;
+      --color-bg-elevated: #ffffff;
+      --color-surface: rgba(0,0,0,0.025);
+      --color-surface-hover: rgba(0,0,0,0.045);
+      --color-border: rgba(0,0,0,0.09);
+      --color-border-hover: rgba(0,0,0,0.16);
+      --color-text: #0f172a;
+      --color-text-secondary: rgba(15,23,42,0.65);
+      --color-text-tertiary: rgba(15,23,42,0.45);
+      --color-accent: #0078d4;
+      --color-accent-glow: rgba(0,120,212,0.18);
+      --color-accent-dark: #005a9e;
+      --gradient-accent: linear-gradient(135deg, #0078d4 0%, #0f172a 100%);
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+      --shadow-card-hover: 0 8px 30px -4px rgba(0,0,0,0.12);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --sidebar-width: 264px;
+      --transition-fast: 0.15s cubic-bezier(0.4,0,0.2,1);
+      --transition-smooth: 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Login screen ── */
+    #login-screen {
+      display: none;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0078d4 100%);
+    }
+    .login-card {
+      background: white;
+      border-radius: var(--radius-xl);
+      padding: 2.5rem 2rem;
+      width: 360px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    }
+    .login-logo {
+      width: 56px; height: 56px;
+      background: var(--gradient-accent);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; margin: 0 auto 1.25rem;
+      box-shadow: 0 4px 16px rgba(0,120,212,0.35);
+    }
+    .login-title { font-size: 1.375rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.375rem; }
+    .login-subtitle { font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 2rem; }
+    .login-btn {
+      width: 100%;
+      padding: 0.75rem 1.5rem;
+      background: var(--gradient-accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font: inherit; font-size: 0.9375rem; font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-smooth);
+      display: flex; align-items: center; justify-content: center; gap: 0.625rem;
+    }
+    .login-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,120,212,0.35); }
+
+    /* ── Main app layout ── */
+    #app { display: none; min-height: 100vh; }
+    .layout { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--color-bg-elevated);
+      border-right: 1px solid var(--color-border);
+      position: fixed; top: 0; left: 0; height: 100vh;
+      display: flex; flex-direction: column;
+      z-index: 100;
+      box-shadow: 1px 0 8px rgba(0,0,0,0.03);
+    }
+    .sidebar-header { padding: 1.5rem 1.5rem 1.25rem; border-bottom: 1px solid var(--color-border); }
+    .logo { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.125rem; }
+    .logo-mark {
+      width: 34px; height: 34px;
+      background: var(--gradient-accent);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.9rem; color: white;
+      box-shadow: 0 3px 10px rgba(0,120,212,0.3);
+    }
+    .logo-text { font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.02em; }
+    .logo-text span { background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    .search-box { position: relative; }
+    .search-input {
+      width: 100%; padding: 0.5625rem 0.875rem 0.5625rem 2.25rem;
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: var(--radius-md); color: var(--color-text);
+      font: inherit; font-size: 0.875rem; outline: none;
+      transition: all var(--transition-smooth);
+    }
+    .search-input::placeholder { color: var(--color-text-tertiary); }
+    .search-input:focus { background: var(--color-surface-hover); border-color: var(--color-accent); box-shadow: 0 0 0 3px var(--color-accent-glow); }
+    .search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--color-text-tertiary); pointer-events: none; }
+    .search-hint {
+      position: absolute; right: 0.625rem; top: 50%; transform: translateY(-50%);
+      font-family: 'JetBrains Mono', monospace; font-size: 0.675rem;
+      color: var(--color-text-tertiary); padding: 0.125rem 0.35rem;
+      background: var(--color-bg-elevated); border: 1px solid var(--color-border); border-radius: 4px;
+      pointer-events: none; transition: opacity var(--transition-fast);
+    }
+    .search-input:focus ~ .search-hint { opacity: 0; }
+
+    .nav-scroll { flex: 1; overflow-y: auto; padding: 0.875rem 0; }
+    .nav-scroll::-webkit-scrollbar { width: 4px; }
+    .nav-scroll::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
+    .nav-label { font-size: 0.625rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-text-tertiary); padding: 0.375rem 1.5rem 0.625rem; }
+    .nav-list { list-style: none; }
+    .nav-item {
+      width: 100%; display: flex; align-items: center; gap: 0.625rem;
+      padding: 0.5625rem 1.5rem; border: none; background: none;
+      font: inherit; font-size: 0.875rem; color: var(--color-text-secondary);
+      cursor: pointer; transition: all var(--transition-fast); text-align: left; position: relative;
+    }
+    .nav-item::before {
+      content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+      width: 3px; height: 0; background: var(--gradient-accent);
+      border-radius: 0 2px 2px 0; transition: height var(--transition-smooth);
+    }
+    .nav-item:hover { color: var(--color-text); background: var(--color-surface); }
+    .nav-item.active { color: var(--color-text); background: var(--color-surface); }
+    .nav-item.active::before { height: 18px; }
+    .nav-icon { font-size: 1rem; width: 1.375rem; text-align: center; opacity: 0.8; }
+    .nav-item:hover .nav-icon, .nav-item.active .nav-icon { opacity: 1; }
+    .nav-count {
+      margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.675rem;
+      color: var(--color-text-tertiary); padding: 0.1rem 0.375rem;
+      background: var(--color-surface); border-radius: 4px;
+    }
+
+    .sidebar-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--color-border); }
+    .user-row { display: flex; align-items: center; gap: 0.625rem; margin-bottom: 0.75rem; }
+    .user-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--gradient-accent); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.75rem; flex-shrink: 0;
+    }
+    .user-info-block { flex: 1; min-width: 0; }
+    .user-name { font-size: 0.8125rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-email { font-size: 0.7rem; color: var(--color-text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .footer-actions { display: flex; gap: 0.5rem; }
+    .footer-btn {
+      flex: 1; padding: 0.4375rem 0.625rem;
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm); color: var(--color-text-secondary);
+      font: inherit; font-size: 0.75rem; font-weight: 500;
+      cursor: pointer; transition: all var(--transition-fast);
+      display: flex; align-items: center; justify-content: center; gap: 0.375rem;
+    }
+    .footer-btn:hover { background: var(--color-surface-hover); border-color: var(--color-border-hover); color: var(--color-text); }
+    .footer-btn.accent { background: var(--color-accent-glow); border-color: rgba(0,120,212,0.25); color: var(--color-accent); }
+    .footer-btn.accent:hover { background: rgba(0,120,212,0.18); }
+    #admin-links { display: none; }
+
+    /* ── Main content ── */
+    .content { flex: 1; margin-left: var(--sidebar-width); padding: 2.5rem 3rem; max-width: calc(100vw - var(--sidebar-width)); }
+    .content-header { margin-bottom: 2.25rem; }
+    .greeting { font-size: 0.8125rem; color: var(--color-text-tertiary); margin-bottom: 0.2rem; font-weight: 500; }
+    .page-title { font-size: 1.875rem; font-weight: 700; letter-spacing: -0.03em; }
+
+    /* ── Sections ── */
+    .section { margin-bottom: 2.75rem; }
+    .section-header { display: flex; align-items: center; gap: 0.625rem; margin-bottom: 1.125rem; }
+    .section-icon { font-size: 1.125rem; opacity: 0.75; }
+    .section-title { font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.01em; }
+    .section-count { font-family: 'JetBrains Mono', monospace; font-size: 0.675rem; color: var(--color-text-secondary); padding: 0.175rem 0.45rem; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 100px; }
+    .section-add-btn {
+      margin-left: auto; padding: 0.3125rem 0.75rem;
+      background: var(--color-accent-glow); border: 1px solid rgba(0,120,212,0.2);
+      border-radius: 100px; color: var(--color-accent);
+      font: inherit; font-size: 0.75rem; font-weight: 600;
+      cursor: pointer; transition: all var(--transition-fast);
+    }
+    .section-add-btn:hover { background: rgba(0,120,212,0.18); }
+
+    /* ── Cards ── */
+    .cards-container { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .card {
+      position: relative; background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+      padding: 1.25rem 1.375rem; box-shadow: var(--shadow-card);
+      transition: all var(--transition-smooth);
+    }
+    .card:hover { transform: translateY(-3px); border-color: rgba(0,120,212,0.25); box-shadow: var(--shadow-card-hover), 0 0 24px rgba(0,120,212,0.07); }
+    .card.focused { transform: translateY(-3px); border-color: var(--color-accent); box-shadow: var(--shadow-card-hover), 0 0 0 3px rgba(0,120,212,0.12); }
+    .card h3 { font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.3rem; letter-spacing: -0.01em; }
+    .card a { color: var(--color-text); text-decoration: none; }
+    .card a::after { content: ''; position: absolute; inset: -1.25rem -1.375rem; }
+    .card:hover h3 a { color: var(--color-accent); }
+    .card .description { color: var(--color-text-secondary); font-size: 0.7875rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .card-arrow { position: absolute; bottom: 1.125rem; right: 1.125rem; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; color: var(--color-accent); background: var(--color-bg); border-radius: 50%; font-size: 0.7rem; opacity: 0; transform: translate(-3px, 3px); transition: all var(--transition-smooth); }
+    .card:hover .card-arrow { opacity: 1; transform: translate(0,0); }
+
+    /* Personal card edit actions */
+    .card-actions { position: absolute; top: 0.75rem; right: 0.75rem; display: flex; gap: 0.25rem; opacity: 0; transition: opacity var(--transition-fast); z-index: 1; }
+    .card:hover .card-actions { opacity: 1; }
+    .card-action-btn {
+      width: 26px; height: 26px; border-radius: 6px;
+      border: 1px solid var(--color-border); background: var(--color-bg-elevated);
+      color: var(--color-text-tertiary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; transition: all var(--transition-fast);
+    }
+    .card-action-btn:hover { background: var(--color-surface-hover); color: var(--color-text); border-color: var(--color-border-hover); }
+    .card-action-btn.danger:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+
+    /* ── Collapsed section (show-more) ── */
+    .section.collapsed .cards-container { padding-right: 72px; }
+    .section.collapsed .card:nth-child(n+5) { display: none; }
+    .more-btn-wrapper { display: none; position: absolute; right: 0; top: 0; height: 100%; max-height: 160px; }
+    .section.collapsed .more-btn-wrapper { display: block; }
+    .show-more-btn {
+      width: 58px; height: 100%; background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+      color: var(--color-accent); font-size: 1.5rem; cursor: pointer;
+      transition: all var(--transition-smooth);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem;
+      box-shadow: var(--shadow-card);
+    }
+    .show-more-btn::after { content: attr(data-count); font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; color: var(--color-text-tertiary); }
+    .show-more-btn:hover { border-color: var(--color-accent); transform: translateX(3px); }
+
+    /* ── Empty / error states ── */
+    .empty-state { text-align: center; padding: 3.5rem 2rem; color: var(--color-text-tertiary); }
+    .empty-state-icon { font-size: 2.5rem; margin-bottom: 0.875rem; opacity: 0.5; }
+    .empty-state-text { font-size: 0.9rem; }
+    .app-error { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 1rem 1.5rem; border-radius: var(--radius-md); margin: 2rem; display: none; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(15,23,42,0.45); backdrop-filter: blur(6px);
+      z-index: 500; align-items: center; justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--color-bg-elevated); border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl); padding: 2rem;
+      width: 420px; max-width: 95vw;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.2);
+      animation: modalIn 0.25s cubic-bezier(0.34,1.4,0.64,1);
+    }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .modal-title { font-size: 1.125rem; font-weight: 600; margin-bottom: 1.375rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-secondary); margin-bottom: 0.4rem; }
+    .form-input {
+      width: 100%; padding: 0.6875rem 0.875rem;
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: var(--radius-md); color: var(--color-text);
+      font: inherit; font-size: 0.9375rem; outline: none;
+      transition: all var(--transition-fast);
+    }
+    .form-input:focus { border-color: var(--color-accent); box-shadow: 0 0 0 3px var(--color-accent-glow); }
+    .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem; }
+    .btn { padding: 0.5625rem 1.125rem; border-radius: var(--radius-md); font: inherit; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all var(--transition-fast); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-secondary); }
+    .btn:hover { background: var(--color-surface-hover); color: var(--color-text); }
+    .btn.primary { background: var(--gradient-accent); border-color: transparent; color: white; }
+    .btn.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,120,212,0.3); }
+
+    /* ── Feedback modal ── */
+    .feedback-type-row { display: flex; gap: 0.5rem; margin-bottom: 0.25rem; }
+    .type-chip { padding: 0.3125rem 0.75rem; border-radius: 100px; border: 1px solid var(--color-border); background: var(--color-surface); font: inherit; font-size: 0.8125rem; cursor: pointer; transition: all var(--transition-fast); }
+    .type-chip.active { background: var(--color-accent-glow); border-color: rgba(0,120,212,0.3); color: var(--color-accent); font-weight: 600; }
+
+    @media (max-width: 768px) {
+      :root { --sidebar-width: 100%; }
+      .layout { flex-direction: column; }
+      .sidebar { position: static; width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--color-border); }
+      .nav-scroll { padding: 0.375rem 0 0.75rem; }
+      .nav-label { display: none; }
+      .nav-list { display: flex; overflow-x: auto; padding: 0 1rem; gap: 0.25rem; }
+      .nav-list::-webkit-scrollbar { display: none; }
+      .nav-item { padding: 0.4375rem 0.875rem; white-space: nowrap; border-radius: var(--radius-md); }
+      .nav-item::before { display: none; }
+      .sidebar-footer { display: none; }
+      .content { margin-left: 0; padding: 1.5rem 1rem; max-width: 100%; }
+      .cards-container { grid-template-columns: 1fr; }
+    }
+
+    :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+
+  <!-- Login screen -->
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="login-logo">🚀</div>
+      <div class="login-title">GridOps LaunchPad</div>
+      <div class="login-subtitle">Sign in to access your team's links</div>
+      <button class="login-btn" onclick="signIn()">
+        <svg width="18" height="18" viewBox="0 0 21 21" fill="none"><rect width="10" height="10" fill="#F25022"/><rect x="11" width="10" height="10" fill="#7FBA00"/><rect y="11" width="10" height="10" fill="#00A4EF"/><rect x="11" y="11" width="10" height="10" fill="#FFB900"/></svg>
+        Sign in with Microsoft
+      </button>
+    </div>
+  </div>
+
+  <!-- Main app -->
+  <div id="app">
+    <div class="app-error" id="app-error">
+      <strong>Error loading LaunchPad:</strong> <span id="app-error-msg"></span>
+    </div>
+    <div class="layout">
+      <nav class="sidebar">
+        <div class="sidebar-header">
+          <div class="logo">
+            <div class="logo-mark">🚀</div>
+            <div class="logo-text"><span>GridOps</span> LaunchPad</div>
+          </div>
+          <div class="search-box">
+            <input type="text" class="search-input" id="search-input" placeholder="Search links...">
+            <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span class="search-hint">/</span>
+          </div>
+        </div>
+        <div class="nav-scroll">
+          <div class="nav-label">Categories</div>
+          <ul class="nav-list" id="nav-list"></ul>
+        </div>
+        <div class="sidebar-footer">
+          <div class="user-row">
+            <div class="user-avatar" id="user-avatar">?</div>
+            <div class="user-info-block">
+              <div class="user-name" id="user-name">Loading...</div>
+              <div class="user-email" id="user-email"></div>
+            </div>
+          </div>
+          <div class="footer-actions">
+            <button class="footer-btn accent" onclick="openFeedbackModal()" title="Send feedback">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Feedback
+            </button>
+            <div id="admin-links">
+              <button class="footer-btn" onclick="window.location.href='admin.html'" title="Manage categories">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                Admin
+              </button>
+            </div>
+            <button class="footer-btn" onclick="signOut()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+              Sign out
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <main class="content" id="content"></main>
+    </div>
+  </div>
+
+  <!-- Add / Edit personal link modal -->
+  <div class="modal-overlay" id="link-modal">
+    <div class="modal">
+      <div class="modal-title" id="link-modal-title">Add Personal Link</div>
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input class="form-input" id="link-name" type="text" placeholder="e.g. AMI SharePoint">
+      </div>
+      <div class="form-group">
+        <label class="form-label">URL</label>
+        <input class="form-input" id="link-url" type="url" placeholder="https://...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input class="form-input" id="link-desc" type="text" placeholder="Short description">
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeLinkModal()">Cancel</button>
+        <button class="btn primary" onclick="saveLinkModal()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback modal -->
+  <div class="modal-overlay" id="feedback-modal">
+    <div class="modal">
+      <div class="modal-title">Send Feedback</div>
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <div class="feedback-type-row">
+          <button class="type-chip active" data-type="general" onclick="selectFeedbackType(this)">General</button>
+          <button class="type-chip" data-type="bug" onclick="selectFeedbackType(this)">Bug</button>
+          <button class="type-chip" data-type="request" onclick="selectFeedbackType(this)">Request</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Message</label>
+        <textarea class="form-input" id="feedback-message" rows="4" placeholder="What's on your mind?" style="resize:vertical"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeFeedbackModal()">Cancel</button>
+        <button class="btn primary" onclick="submitFeedback()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── MSAL Configuration ──────────────────────────────────────────────
+    const MSAL_CONFIG = {
+      auth: {
+        clientId: 'f6c71447-d931-4690-aa7a-a43b5c261c71',
+        authority: 'https://login.microsoftonline.com/common',
+        redirectUri: window.location.origin
+      },
+      cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: false }
+    };
+    const TOKEN_REQUEST = { scopes: ['openid', 'profile', 'email', 'User.Read'] };
+
+    let msalInstance;
+    let authToken = null;
+    let currentUser = null;
+
+    // ── App state ────────────────────────────────────────────────────────
+    let allCollections = [];
+    let personalLinks = [];
+    let activeFilter = 'all';
+    let searchQuery = '';
+    let focusedCardIndex = -1;
+    let editingLinkId = null;  // null = adding new link
+
+    // ── Auth ─────────────────────────────────────────────────────────────
+    async function initAuth() {
+      msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+      await msalInstance.initialize();
+
+      const response = await msalInstance.handleRedirectPromise();
+      if (response) {
+        authToken = response.idToken;
+        await loadApp(response.account);
+        return;
+      }
+
+      const accounts = msalInstance.getAllAccounts();
+      if (accounts.length > 0) {
+        try {
+          const res = await msalInstance.acquireTokenSilent({ ...TOKEN_REQUEST, account: accounts[0] });
+          authToken = res.idToken;
+          await loadApp(accounts[0]);
+        } catch {
+          showLogin();
+        }
+      } else {
+        showLogin();
+      }
+    }
+
+    function showLogin() {
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('app').style.display = 'none';
+    }
+
+    async function signIn() { await msalInstance.loginRedirect(TOKEN_REQUEST); }
+    async function signOut() { await msalInstance.logoutRedirect(); }
+
+    // ── API helpers ──────────────────────────────────────────────────────
+    function headers() {
+      return { 'Content-Type': 'application/json', 'X-Auth-Token': authToken };
+    }
+
+    async function apiGet(path) {
+      const res = await fetch(`/api${path}`, { headers: headers() });
+      if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+      return res.json();
+    }
+
+    async function apiPut(path, body) {
+      const res = await fetch(`/api${path}`, { method: 'PUT', headers: headers(), body: JSON.stringify(body) });
+      if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+      return res.json();
+    }
+
+    async function apiPost(path, body) {
+      const res = await fetch(`/api${path}`, { method: 'POST', headers: headers(), body: JSON.stringify(body) });
+      if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+      return res.json();
+    }
+
+    // ── Load app ─────────────────────────────────────────────────────────
+    async function loadApp(account) {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+
+      try {
+        const [me, collectionsData, personalData] = await Promise.all([
+          apiGet('/me'),
+          apiGet('/collections'),
+          apiGet('/personal')
+        ]);
+
+        currentUser = me;
+        allCollections = collectionsData.collections || [];
+        personalLinks = personalData.links || [];
+
+        // Sidebar user info
+        const initials = (me.name || me.email).split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        document.getElementById('user-avatar').textContent = initials;
+        document.getElementById('user-name').textContent = me.name || me.email;
+        document.getElementById('user-email').textContent = me.email;
+
+        if (me.role === 'admin') {
+          document.getElementById('admin-links').style.display = 'block';
+        }
+
+        renderNav();
+        renderContent();
+        setupSearch();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('app-error').style.display = 'block';
+        document.getElementById('app-error-msg').textContent = err.message;
+      }
+    }
+
+    // ── Nav ──────────────────────────────────────────────────────────────
+    function renderNav() {
+      const nav = document.getElementById('nav-list');
+      const totalLinks = personalLinks.length + allCollections.reduce((n, c) => n + (c.links || []).length, 0);
+
+      const items = [
+        `<li><button class="nav-item active" data-filter="all">
+          <span class="nav-icon">⬡</span><span>All Links</span>
+          <span class="nav-count">${totalLinks}</span>
+        </button></li>`,
+        `<li><button class="nav-item" data-filter="__personal__">
+          <span class="nav-icon">⭐</span><span>My Links</span>
+          <span class="nav-count">${personalLinks.length}</span>
+        </button></li>`,
+        ...allCollections.map(c => `
+          <li><button class="nav-item" data-filter="${escHtml(c.id)}">
+            <span class="nav-icon">${c.icon || '🔗'}</span><span>${escHtml(c.name)}</span>
+            <span class="nav-count">${(c.links || []).length}</span>
+          </button></li>`)
+      ];
+
+      nav.innerHTML = items.join('');
+      nav.addEventListener('click', e => {
+        const btn = e.target.closest('.nav-item');
+        if (!btn) return;
+        activeFilter = btn.dataset.filter;
+        nav.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        searchQuery = '';
+        document.getElementById('search-input').value = '';
+        renderContent();
+      });
+    }
+
+    // ── Content rendering ────────────────────────────────────────────────
+    function getGreeting() {
+      const h = new Date().getHours();
+      return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+    }
+
+    function buildSections() {
+      const query = searchQuery.toLowerCase();
+
+      let sections = [];
+
+      // Always include personal as first section
+      const filteredPersonal = query
+        ? personalLinks.filter(l => l.name.toLowerCase().includes(query) || (l.description || '').toLowerCase().includes(query))
+        : personalLinks;
+
+      if (activeFilter === 'all' || activeFilter === '__personal__') {
+        sections.push({ id: '__personal__', name: 'My Links', icon: '⭐', links: filteredPersonal, personal: true });
+      }
+
+      // Shared collections
+      const collectionsToShow = activeFilter === 'all' || activeFilter === '__personal__'
+        ? allCollections
+        : allCollections.filter(c => c.id === activeFilter);
+
+      for (const col of collectionsToShow) {
+        const links = query
+          ? (col.links || []).filter(l => l.name.toLowerCase().includes(query) || (l.description || '').toLowerCase().includes(query))
+          : (col.links || []);
+        if (query && links.length === 0) continue;
+        sections.push({ ...col, links });
+      }
+
+      return sections;
+    }
+
+    function renderContent() {
+      const container = document.getElementById('content');
+      const sections = buildSections();
+      const isAllView = activeFilter === 'all';
+
+      let titleText = 'All Links';
+      if (activeFilter === '__personal__') titleText = 'My Links';
+      else if (activeFilter !== 'all') {
+        const col = allCollections.find(c => c.id === activeFilter);
+        if (col) titleText = col.name;
+      }
+
+      const header = `
+        <div class="content-header">
+          <p class="greeting">${getGreeting()}</p>
+          <h1 class="page-title">${escHtml(titleText)}</h1>
+        </div>`;
+
+      const sectionsHtml = sections.map(section => renderSection(section, isAllView)).join('');
+
+      const allEmpty = sections.every(s => s.links.length === 0);
+      container.innerHTML = header + (allEmpty && searchQuery
+        ? `<div class="empty-state"><div class="empty-state-icon">🔍</div><p class="empty-state-text">No links match "<strong>${escHtml(searchQuery)}</strong>"</p></div>`
+        : sectionsHtml);
+
+      container.querySelectorAll('.show-more-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          const sectionEl = e.target.closest('.section');
+          const filterId = sectionEl.dataset.id;
+          const navBtn = document.querySelector(`.nav-item[data-filter="${filterId}"]`);
+          if (navBtn) navBtn.click();
+        });
+      });
+
+      focusedCardIndex = -1;
+    }
+
+    function renderSection(section, isAllView) {
+      const { id, name, icon, links, personal } = section;
+      const hasMore = links.length > 4;
+      const collapsed = isAllView && hasMore ? 'collapsed' : '';
+      const hidden = links.length - 4;
+
+      const addBtn = personal
+        ? `<button class="section-add-btn" onclick="openAddLinkModal()">+ Add</button>`
+        : '';
+
+      const cardsHtml = links.map(link => renderCard(link, personal)).join('');
+
+      return `
+        <section class="section ${collapsed}" data-id="${escHtml(id)}">
+          <div class="section-header">
+            <span class="section-icon">${icon || '🔗'}</span>
+            <h2 class="section-title">${escHtml(name)}</h2>
+            <span class="section-count">${links.length}</span>
+            ${addBtn}
+          </div>
+          <ul class="cards-container" style="position:relative">
+            ${cardsHtml || `<li style="grid-column:1/-1"><div class="empty-state" style="padding:1.5rem"><div class="empty-state-icon" style="font-size:1.75rem">🔗</div><p class="empty-state-text">${personal ? 'No personal links yet. Click + Add to get started.' : 'No links in this category yet.'}</p></div></li>`}
+            ${hasMore ? `<li class="more-btn-wrapper"><button class="show-more-btn" data-count="+${hidden}">›</button></li>` : ''}
+          </ul>
+        </section>`;
+    }
+
+    function renderCard(link, editable) {
+      const editActions = editable ? `
+        <div class="card-actions">
+          <button class="card-action-btn" onclick="openEditLinkModal('${escHtml(link.id)}');event.stopPropagation()" title="Edit">✎</button>
+          <button class="card-action-btn danger" onclick="deletePersonalLink('${escHtml(link.id)}');event.stopPropagation()" title="Delete">✕</button>
+        </div>` : '';
+
+      return `
+        <li class="card">
+          ${editActions}
+          <h3><a href="${escHtml(link.url)}" target="_blank" rel="noopener noreferrer">${escHtml(link.name)}</a></h3>
+          ${link.description ? `<p class="description">${escHtml(link.description)}</p>` : ''}
+          <span class="card-arrow">→</span>
+        </li>`;
+    }
+
+    // ── Search ───────────────────────────────────────────────────────────
+    function setupSearch() {
+      const input = document.getElementById('search-input');
+      input.addEventListener('input', e => { searchQuery = e.target.value; renderContent(); });
+
+      document.addEventListener('keydown', e => {
+        const focused = document.activeElement === input;
+        if (e.key === '/' && !focused) { e.preventDefault(); input.focus(); return; }
+        if (e.key === 'Escape' && focused) { input.blur(); searchQuery = ''; input.value = ''; renderContent(); return; }
+
+        const cards = Array.from(document.querySelectorAll('.card'));
+        if (!focused && cards.length > 0) {
+          if (e.key === 'ArrowDown' || e.key === 'j') { e.preventDefault(); setFocus(focusedCardIndex < cards.length - 1 ? focusedCardIndex + 1 : 0, cards); }
+          else if (e.key === 'ArrowUp' || e.key === 'k') { e.preventDefault(); setFocus(focusedCardIndex > 0 ? focusedCardIndex - 1 : cards.length - 1, cards); }
+          else if (e.key === 'Enter' && focusedCardIndex >= 0) { e.preventDefault(); cards[focusedCardIndex].querySelector('a')?.click(); }
+        }
+      });
+    }
+
+    function setFocus(idx, cards) {
+      cards.forEach(c => c.classList.remove('focused'));
+      focusedCardIndex = idx;
+      if (idx >= 0 && idx < cards.length) {
+        cards[idx].classList.add('focused');
+        cards[idx].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    // ── Personal links CRUD ──────────────────────────────────────────────
+    function openAddLinkModal() {
+      editingLinkId = null;
+      document.getElementById('link-modal-title').textContent = 'Add Personal Link';
+      document.getElementById('link-name').value = '';
+      document.getElementById('link-url').value = '';
+      document.getElementById('link-desc').value = '';
+      document.getElementById('link-modal').classList.add('active');
+      setTimeout(() => document.getElementById('link-name').focus(), 80);
+    }
+
+    function openEditLinkModal(id) {
+      const link = personalLinks.find(l => l.id === id);
+      if (!link) return;
+      editingLinkId = id;
+      document.getElementById('link-modal-title').textContent = 'Edit Personal Link';
+      document.getElementById('link-name').value = link.name;
+      document.getElementById('link-url').value = link.url;
+      document.getElementById('link-desc').value = link.description || '';
+      document.getElementById('link-modal').classList.add('active');
+      setTimeout(() => document.getElementById('link-name').focus(), 80);
+    }
+
+    function closeLinkModal() {
+      document.getElementById('link-modal').classList.remove('active');
+    }
+
+    async function saveLinkModal() {
+      const name = document.getElementById('link-name').value.trim();
+      const url = document.getElementById('link-url').value.trim();
+      const description = document.getElementById('link-desc').value.trim();
+
+      if (!name) { document.getElementById('link-name').focus(); return; }
+      if (!url) { document.getElementById('link-url').focus(); return; }
+
+      if (editingLinkId) {
+        const idx = personalLinks.findIndex(l => l.id === editingLinkId);
+        if (idx >= 0) personalLinks[idx] = { ...personalLinks[idx], name, url, description };
+      } else {
+        personalLinks.push({ id: `lnk-${Date.now()}`, name, url, description });
+      }
+
+      closeLinkModal();
+      await savePersonalLinks();
+    }
+
+    async function deletePersonalLink(id) {
+      if (!confirm('Delete this link?')) return;
+      personalLinks = personalLinks.filter(l => l.id !== id);
+      await savePersonalLinks();
+    }
+
+    async function savePersonalLinks() {
+      try {
+        await apiPut('/personal', { links: personalLinks });
+        renderNav();
+        renderContent();
+      } catch (err) {
+        alert('Failed to save: ' + err.message);
+        // Reload to reset state
+        const d = await apiGet('/personal');
+        personalLinks = d.links || [];
+        renderContent();
+      }
+    }
+
+    // ── Feedback ─────────────────────────────────────────────────────────
+    let feedbackType = 'general';
+
+    function openFeedbackModal() {
+      document.getElementById('feedback-message').value = '';
+      document.getElementById('feedback-modal').classList.add('active');
+      setTimeout(() => document.getElementById('feedback-message').focus(), 80);
+    }
+
+    function closeFeedbackModal() {
+      document.getElementById('feedback-modal').classList.remove('active');
+    }
+
+    function selectFeedbackType(btn) {
+      document.querySelectorAll('.type-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      feedbackType = btn.dataset.type;
+    }
+
+    async function submitFeedback() {
+      const message = document.getElementById('feedback-message').value.trim();
+      if (!message) { document.getElementById('feedback-message').focus(); return; }
+      try {
+        await apiPost('/feedback', { message, type: feedbackType });
+        closeFeedbackModal();
+        alert('Thanks for your feedback!');
+      } catch (err) {
+        alert('Failed to submit: ' + err.message);
+      }
+    }
+
+    // ── Modals: close on backdrop click ──────────────────────────────────
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('active'); });
+    });
+
+    // ── Keyboard shortcut: Enter submits modal ────────────────────────────
+    document.getElementById('link-modal').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') saveLinkModal();
+      if (e.key === 'Escape') closeLinkModal();
+    });
+    document.getElementById('feedback-modal').addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeFeedbackModal();
+    });
+
+    // ── Utilities ────────────────────────────────────────────────────────
+    function escHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Boot ─────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', initAuth);
+  </script>
+</body>
+</html>

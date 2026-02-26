@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GridOps LaunchPad — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+  <style>
+    :root {
+      --bg: #f0f4f8; --surface: #ffffff; --surface2: #eaeff5;
+      --border: #d0d8e4; --border-light: #b8c4d4;
+      --text: #0f172a; --text-dim: #4b5a6e; --text-muted: #8898a8;
+      --accent: #0078d4; --accent-dim: rgba(0,120,212,0.1);
+      --danger: #dc2626; --danger-dim: rgba(220,38,38,0.1);
+      --green: #16a34a; --green-dim: rgba(22,163,74,0.1);
+      --row-hover: rgba(0,120,212,0.04);
+      --font-mono: 'IBM Plex Mono', monospace; --font-sans: 'IBM Plex Sans', sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-sans); background: var(--bg); color: var(--text); font-size: 13px; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+    /* Header */
+    .header { display: flex; align-items: center; gap: 12px; padding: 10px 24px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .header-brand { font-family: var(--font-mono); font-weight: 600; font-size: 14px; color: var(--accent); letter-spacing: -0.5px; }
+    .header-brand span { color: var(--text-dim); font-weight: 400; }
+    .header-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    .header-sep { width: 1px; height: 24px; background: var(--border); }
+    .header-spacer { flex: 1; }
+    .back-link { font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 500; }
+    .back-link:hover { text-decoration: underline; }
+    .signin-btn { background: var(--accent); border: 1px solid var(--accent); color: #fff; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-family: var(--font-sans); font-size: 12px; font-weight: 500; }
+    .signin-btn:hover { background: #005a9e; }
+    .user-info { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 11px; }
+    .user-email { color: var(--text-dim); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+    .signout-btn:hover { background: var(--danger-dim); color: var(--danger); border-color: var(--danger); }
+
+    /* Access / state messages */
+    .state-msg { text-align: center; padding: 80px 24px; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .state-msg h2 { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .state-msg p { font-size: 13px; color: var(--text-dim); }
+
+    /* Two-column layout */
+    .columns { display: flex; flex: 1; overflow: hidden; }
+    .col-list { width: 340px; min-width: 280px; overflow-y: auto; padding: 20px; border-right: 1px solid var(--border); }
+    .col-edit { flex: 1; overflow-y: auto; padding: 20px; background: var(--bg); }
+
+    /* Toolbar */
+    .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .toolbar-title { font-size: 13px; font-weight: 600; flex: 1; }
+    .tb-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-family: var(--font-sans); font-size: 12px; font-weight: 500; transition: all 0.15s; white-space: nowrap; }
+    .tb-btn:hover { background: var(--border); }
+    .tb-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .tb-btn.primary:hover { background: #005a9e; }
+    .tb-btn.danger { color: var(--danger); }
+    .tb-btn.danger:hover { background: var(--danger-dim); border-color: var(--danger); }
+    .tb-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Collection list */
+    .col-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 10px; }
+    .col-card:hover { border-color: var(--accent); background: var(--accent-dim); }
+    .col-card.selected { border-color: var(--accent); background: var(--accent-dim); }
+    .col-card-icon { font-size: 18px; width: 28px; text-align: center; flex-shrink: 0; }
+    .col-card-info { flex: 1; min-width: 0; }
+    .col-card-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .col-card-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .col-card-actions { display: flex; gap: 4px; }
+    .icon-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 3px 5px; border-radius: 3px; font-size: 13px; line-height: 1; }
+    .icon-btn:hover { background: var(--surface2); color: var(--text); }
+    .icon-btn.danger:hover { background: var(--danger-dim); color: var(--danger); }
+
+    /* Edit panel */
+    .edit-panel-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); }
+    .edit-section { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px; margin-bottom: 16px; }
+    .edit-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 12px; }
+    .form-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 12px; flex-wrap: wrap; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 120px; }
+    .form-group.fixed { flex: none; }
+    .form-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-dim); }
+    .form-input { padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--font-sans); font-size: 13px; color: var(--text); background: var(--surface); }
+    .form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,120,212,0.15); }
+
+    /* Links table */
+    .links-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    .links-table th { background: #eaeff5; border-bottom: 2px solid var(--border); padding: 7px 10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); text-align: left; }
+    .links-table td { border-bottom: 1px solid var(--border); padding: 8px 10px; font-size: 12px; vertical-align: middle; }
+    .links-table tr:last-child td { border-bottom: none; }
+    .links-table tr:hover td { background: var(--row-hover); }
+    .links-table td a { color: var(--accent); text-decoration: none; font-family: var(--font-mono); font-size: 11px; }
+    .links-table td a:hover { text-decoration: underline; }
+
+    /* Sharing table */
+    .sharing-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    .sharing-table th { background: #eaeff5; border-bottom: 2px solid var(--border); padding: 7px 10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); text-align: left; }
+    .sharing-table td { border-bottom: 1px solid var(--border); padding: 8px 10px; font-size: 12px; vertical-align: middle; }
+    .sharing-table tr:last-child td { border-bottom: none; }
+    .sharing-table tr:hover td { background: var(--row-hover); }
+    .remove-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 15px; padding: 2px 5px; border-radius: 3px; line-height: 1; }
+    .remove-btn:hover { background: var(--danger-dim); color: var(--danger); }
+
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; width: 400px; max-width: 95vw; box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+    .modal-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+    .btn { padding: 6px 14px; border-radius: 4px; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--text-dim); transition: all 0.15s; }
+    .btn:hover { background: var(--border); color: var(--text); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    .btn.primary:hover { background: #005a9e; }
+
+    .toast { position: fixed; bottom: 20px; right: 20px; background: var(--text); color: white; padding: 10px 16px; border-radius: 6px; font-size: 12px; font-weight: 500; z-index: 999; display: none; animation: slideUp 0.2s ease; }
+    @keyframes slideUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-brand">GridOps <span>LaunchPad</span></div>
+    <div class="header-sep"></div>
+    <div class="header-title">Collection Manager</div>
+    <div class="header-spacer"></div>
+    <a href="users.html" class="back-link">Manage Users</a>
+    <div class="header-sep"></div>
+    <a href="index.html" class="back-link">← Back to LaunchPad</a>
+    <div class="header-sep"></div>
+    <div id="auth-area">
+      <button class="signin-btn" onclick="signIn()">Sign in</button>
+    </div>
+  </div>
+
+  <div id="loading" class="state-msg"><h2>Loading...</h2></div>
+  <div id="access-denied" class="state-msg" style="display:none"><h2>Access Denied</h2><p>Admin role required to access this page.</p></div>
+
+  <div class="columns" id="main-ui" style="display:none">
+    <!-- Left: collection list -->
+    <div class="col-list">
+      <div class="toolbar">
+        <div class="toolbar-title">Collections</div>
+        <button class="tb-btn primary" onclick="openCreateModal()">+ New</button>
+      </div>
+      <div id="collection-list"></div>
+    </div>
+
+    <!-- Right: edit panel -->
+    <div class="col-edit" id="col-edit">
+      <div class="edit-panel-empty" id="edit-empty">← Select a collection to edit</div>
+      <div id="edit-panel" style="display:none">
+        <!-- Metadata -->
+        <div class="edit-section">
+          <div class="edit-section-title">Collection Details</div>
+          <div class="form-row">
+            <div class="form-group fixed" style="width:52px">
+              <label class="form-label">Icon</label>
+              <input class="form-input" id="edit-icon" type="text" maxlength="2" style="text-align:center;font-size:18px" placeholder="🔗">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Name</label>
+              <input class="form-input" id="edit-name" type="text" placeholder="Collection name">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Description</label>
+            <input class="form-input" id="edit-description" type="text" placeholder="Short description (optional)">
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="tb-btn primary" onclick="saveMetadata()">Save Details</button>
+            <button class="tb-btn danger" onclick="deleteCollection()">Delete Collection</button>
+          </div>
+        </div>
+
+        <!-- Links -->
+        <div class="edit-section">
+          <div class="edit-section-title">Links</div>
+          <!-- Add link inline form -->
+          <div class="form-row" style="margin-bottom:12px">
+            <div class="form-group">
+              <label class="form-label">Name</label>
+              <input class="form-input" id="new-link-name" type="text" placeholder="Link name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">URL</label>
+              <input class="form-input" id="new-link-url" type="url" placeholder="https://...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Description</label>
+              <input class="form-input" id="new-link-desc" type="text" placeholder="(optional)">
+            </div>
+            <div class="form-group fixed" style="width:64px">
+              <label class="form-label">&nbsp;</label>
+              <button class="tb-btn primary" onclick="addLink()" style="height:100%">Add</button>
+            </div>
+          </div>
+          <table class="links-table" id="links-table">
+            <thead><tr><th>Name</th><th>URL</th><th>Description</th><th></th></tr></thead>
+            <tbody id="links-tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- Sharing -->
+        <div class="edit-section">
+          <div class="edit-section-title">Sharing — who can see this collection</div>
+          <div class="form-row" style="margin-bottom:12px">
+            <div class="form-group">
+              <label class="form-label">Add User Email</label>
+              <input class="form-input" id="share-email" type="email" placeholder="user@example.com">
+            </div>
+            <div class="form-group fixed" style="width:80px">
+              <label class="form-label">&nbsp;</label>
+              <button class="tb-btn primary" onclick="addShare()" style="height:100%">Share</button>
+            </div>
+          </div>
+          <table class="sharing-table" id="sharing-table">
+            <thead><tr><th>Email</th><th></th></tr></thead>
+            <tbody id="sharing-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create collection modal -->
+  <div class="modal-overlay" id="create-modal">
+    <div class="modal">
+      <div class="modal-title">New Collection</div>
+      <div class="form-row">
+        <div class="form-group fixed" style="width:52px">
+          <label class="form-label">Icon</label>
+          <input class="form-input" id="create-icon" type="text" maxlength="2" value="🔗" style="text-align:center;font-size:18px">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Name *</label>
+          <input class="form-input" id="create-name" type="text" placeholder="e.g. SharePoint Links">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:4px">
+        <label class="form-label">Description</label>
+        <input class="form-input" id="create-desc" type="text" placeholder="(optional)">
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeCreateModal()">Cancel</button>
+        <button class="btn primary" onclick="createCollection()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit link modal -->
+  <div class="modal-overlay" id="edit-link-modal">
+    <div class="modal">
+      <div class="modal-title">Edit Link</div>
+      <input type="hidden" id="edit-link-id">
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="form-label">Name</label>
+        <input class="form-input" id="edit-link-name" type="text">
+      </div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="form-label">URL</label>
+        <input class="form-input" id="edit-link-url" type="url">
+      </div>
+      <div class="form-group" style="margin-bottom:4px">
+        <label class="form-label">Description</label>
+        <input class="form-input" id="edit-link-desc" type="text">
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeEditLinkModal()">Cancel</button>
+        <button class="btn primary" onclick="saveEditLink()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ── MSAL ─────────────────────────────────────────────────────────────
+    const MSAL_CONFIG = {
+      auth: { clientId: 'f6c71447-d931-4690-aa7a-a43b5c261c71', authority: 'https://login.microsoftonline.com/common', redirectUri: window.location.origin },
+      cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: false }
+    };
+    const TOKEN_REQUEST = { scopes: ['openid', 'profile', 'email', 'User.Read'] };
+    let msalInstance, authToken;
+
+    async function initAuth() {
+      msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+      await msalInstance.initialize();
+      const res = await msalInstance.handleRedirectPromise();
+      if (res) { authToken = res.idToken; await bootAdmin(); return; }
+      const accounts = msalInstance.getAllAccounts();
+      if (accounts.length > 0) {
+        try {
+          const r = await msalInstance.acquireTokenSilent({ ...TOKEN_REQUEST, account: accounts[0] });
+          authToken = r.idToken; await bootAdmin();
+        } catch { msalInstance.loginRedirect(TOKEN_REQUEST); }
+      } else { msalInstance.loginRedirect(TOKEN_REQUEST); }
+    }
+    function signIn() { msalInstance.loginRedirect(TOKEN_REQUEST); }
+    async function signOut() { await msalInstance.logoutRedirect(); }
+
+    // ── API ──────────────────────────────────────────────────────────────
+    function hdrs() { return { 'Content-Type': 'application/json', 'X-Auth-Token': authToken }; }
+    async function apiGet(p) { const r = await fetch('/api' + p, { headers: hdrs() }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
+    async function apiPost(p, b) { const r = await fetch('/api' + p, { method: 'POST', headers: hdrs(), body: JSON.stringify(b) }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
+    async function apiPut(p, b) { const r = await fetch('/api' + p, { method: 'PUT', headers: hdrs(), body: JSON.stringify(b) }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
+    async function apiDel(p) { const r = await fetch('/api' + p, { method: 'DELETE', headers: hdrs() }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
+
+    // ── State ────────────────────────────────────────────────────────────
+    let collections = [];
+    let selectedId = null;
+
+    function selectedCollection() { return collections.find(c => c.id === selectedId); }
+
+    // ── Boot ─────────────────────────────────────────────────────────────
+    async function bootAdmin() {
+      try {
+        const me = await apiGet('/me');
+        if (me.role !== 'admin') {
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('access-denied').style.display = 'flex';
+          return;
+        }
+        const initials = (me.name || me.email).split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        document.getElementById('auth-area').innerHTML = `
+          <div class="user-info">
+            <div class="user-avatar">${initials}</div>
+            <span class="user-email">${me.email}</span>
+            <button class="signout-btn" onclick="signOut()">Sign out</button>
+          </div>`;
+        await loadCollections();
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('main-ui').style.display = 'flex';
+      } catch (err) {
+        document.getElementById('loading').innerHTML = `<h2>Error</h2><p>${err.message}</p>`;
+      }
+    }
+
+    async function loadCollections() {
+      const data = await apiGet('/collections');
+      collections = data.collections || [];
+      renderCollectionList();
+    }
+
+    // ── Collection list ──────────────────────────────────────────────────
+    function renderCollectionList() {
+      const el = document.getElementById('collection-list');
+      if (collections.length === 0) {
+        el.innerHTML = '<p style="color:var(--text-muted);font-size:12px;text-align:center;padding:24px 0">No collections yet.<br>Click + New to create one.</p>';
+        return;
+      }
+      el.innerHTML = collections.map(c => `
+        <div class="col-card ${c.id === selectedId ? 'selected' : ''}" onclick="selectCollection('${c.id}')">
+          <span class="col-card-icon">${c.icon || '🔗'}</span>
+          <div class="col-card-info">
+            <div class="col-card-name">${escHtml(c.name)}</div>
+            <div class="col-card-meta">${(c.links||[]).length} link${(c.links||[]).length !== 1 ? 's' : ''} · ${(c.sharedWith||[]).length} shared</div>
+          </div>
+        </div>`).join('');
+    }
+
+    function selectCollection(id) {
+      selectedId = id;
+      renderCollectionList();
+      renderEditPanel();
+    }
+
+    // ── Edit panel ───────────────────────────────────────────────────────
+    function renderEditPanel() {
+      const col = selectedCollection();
+      if (!col) { document.getElementById('edit-empty').style.display = 'flex'; document.getElementById('edit-panel').style.display = 'none'; return; }
+      document.getElementById('edit-empty').style.display = 'none';
+      document.getElementById('edit-panel').style.display = 'block';
+
+      document.getElementById('edit-icon').value = col.icon || '🔗';
+      document.getElementById('edit-name').value = col.name;
+      document.getElementById('edit-description').value = col.description || '';
+      renderLinksTable(col.links || []);
+      renderSharingTable(col.sharedWith || []);
+    }
+
+    function renderLinksTable(links) {
+      const tbody = document.getElementById('links-tbody');
+      if (links.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:16px">No links yet. Add one above.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = links.map((l, i) => `
+        <tr>
+          <td>${escHtml(l.name)}</td>
+          <td><a href="${escHtml(l.url)}" target="_blank" title="${escHtml(l.url)}">${escHtml(l.url.length > 40 ? l.url.substring(0,40) + '…' : l.url)}</a></td>
+          <td style="color:var(--text-muted)">${escHtml(l.description || '')}</td>
+          <td style="white-space:nowrap">
+            <button class="icon-btn" onclick="openEditLinkModal(${i})" title="Edit">✎</button>
+            <button class="icon-btn danger" onclick="removeLink(${i})" title="Remove">✕</button>
+          </td>
+        </tr>`).join('');
+    }
+
+    function renderSharingTable(sharedWith) {
+      const tbody = document.getElementById('sharing-tbody');
+      if (sharedWith.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--text-muted);padding:16px">Not shared with anyone. Only admins can see this.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = sharedWith.map((e, i) => {
+        const email = typeof e === 'string' ? e : e.email;
+        return `<tr><td style="font-family:var(--font-mono);font-size:12px">${escHtml(email)}</td>
+          <td><button class="remove-btn" onclick="removeShare(${i})" title="Remove">✕</button></td></tr>`;
+      }).join('');
+    }
+
+    // ── Metadata save ────────────────────────────────────────────────────
+    async function saveMetadata() {
+      const col = selectedCollection();
+      if (!col) return;
+      try {
+        const updated = await apiPut(`/collections/${col.id}`, {
+          name: document.getElementById('edit-name').value.trim(),
+          icon: document.getElementById('edit-icon').value.trim() || '🔗',
+          description: document.getElementById('edit-description').value.trim()
+        });
+        mergeCollection(updated);
+        toast('Saved');
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    // ── Links ────────────────────────────────────────────────────────────
+    async function addLink() {
+      const col = selectedCollection();
+      if (!col) return;
+      const name = document.getElementById('new-link-name').value.trim();
+      const url = document.getElementById('new-link-url').value.trim();
+      const description = document.getElementById('new-link-desc').value.trim();
+      if (!name || !url) { alert('Name and URL are required'); return; }
+
+      const links = [...(col.links || []), { id: `lnk-${Date.now()}`, name, url, description }];
+      try {
+        const updated = await apiPut(`/collections/${col.id}`, { links });
+        mergeCollection(updated);
+        document.getElementById('new-link-name').value = '';
+        document.getElementById('new-link-url').value = '';
+        document.getElementById('new-link-desc').value = '';
+        renderLinksTable(updated.links);
+        toast('Link added');
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    async function removeLink(index) {
+      const col = selectedCollection();
+      if (!col || !confirm('Remove this link?')) return;
+      const links = (col.links || []).filter((_, i) => i !== index);
+      try {
+        const updated = await apiPut(`/collections/${col.id}`, { links });
+        mergeCollection(updated);
+        renderLinksTable(updated.links);
+        toast('Link removed');
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    function openEditLinkModal(index) {
+      const col = selectedCollection();
+      if (!col) return;
+      const link = (col.links || [])[index];
+      if (!link) return;
+      document.getElementById('edit-link-id').value = index;
+      document.getElementById('edit-link-name').value = link.name;
+      document.getElementById('edit-link-url').value = link.url;
+      document.getElementById('edit-link-desc').value = link.description || '';
+      document.getElementById('edit-link-modal').classList.add('active');
+    }
+
+    function closeEditLinkModal() { document.getElementById('edit-link-modal').classList.remove('active'); }
+
+    async function saveEditLink() {
+      const col = selectedCollection();
+      if (!col) return;
+      const index = parseInt(document.getElementById('edit-link-id').value);
+      const links = [...(col.links || [])];
+      links[index] = {
+        ...links[index],
+        name: document.getElementById('edit-link-name').value.trim(),
+        url: document.getElementById('edit-link-url').value.trim(),
+        description: document.getElementById('edit-link-desc').value.trim()
+      };
+      try {
+        const updated = await apiPut(`/collections/${col.id}`, { links });
+        mergeCollection(updated);
+        renderLinksTable(updated.links);
+        closeEditLinkModal();
+        toast('Link saved');
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    // ── Sharing ──────────────────────────────────────────────────────────
+    async function addShare() {
+      const col = selectedCollection();
+      if (!col) return;
+      const email = document.getElementById('share-email').value.trim().toLowerCase();
+      if (!email || !email.includes('@')) { alert('Valid email required'); return; }
+      const sharedWith = [...(col.sharedWith || [])];
+      if (sharedWith.some(e => (typeof e === 'string' ? e : e.email).toLowerCase() === email)) {
+        alert('Already shared with this user'); return;
+      }
+      sharedWith.push(email);
+      try {
+        const updated = await apiPut(`/collections/${col.id}/sharing`, { sharedWith });
+        mergeCollection(updated);
+        renderSharingTable(updated.sharedWith);
+        document.getElementById('share-email').value = '';
+        toast('Shared');
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    async function removeShare(index) {
+      const col = selectedCollection();
+      if (!col || !confirm('Remove this user from sharing?')) return;
+      const sharedWith = (col.sharedWith || []).filter((_, i) => i !== index);
+      try {
+        const updated = await apiPut(`/collections/${col.id}/sharing`, { sharedWith });
+        mergeCollection(updated);
+        renderSharingTable(updated.sharedWith);
+        toast('Removed');
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    // ── Create / Delete ──────────────────────────────────────────────────
+    function openCreateModal() {
+      document.getElementById('create-name').value = '';
+      document.getElementById('create-icon').value = '🔗';
+      document.getElementById('create-desc').value = '';
+      document.getElementById('create-modal').classList.add('active');
+      setTimeout(() => document.getElementById('create-name').focus(), 80);
+    }
+    function closeCreateModal() { document.getElementById('create-modal').classList.remove('active'); }
+
+    async function createCollection() {
+      const name = document.getElementById('create-name').value.trim();
+      if (!name) { document.getElementById('create-name').focus(); return; }
+      try {
+        const col = await apiPost('/collections', {
+          name,
+          icon: document.getElementById('create-icon').value.trim() || '🔗',
+          description: document.getElementById('create-desc').value.trim()
+        });
+        collections.push(col);
+        closeCreateModal();
+        selectCollection(col.id);
+        toast('Collection created');
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    async function deleteCollection() {
+      const col = selectedCollection();
+      if (!col || !confirm(`Delete "${col.name}"? This cannot be undone.`)) return;
+      try {
+        await apiDel(`/collections/${col.id}`);
+        collections = collections.filter(c => c.id !== col.id);
+        selectedId = null;
+        renderCollectionList();
+        renderEditPanel();
+        toast('Collection deleted');
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────
+    function mergeCollection(updated) {
+      const idx = collections.findIndex(c => c.id === updated.id);
+      if (idx >= 0) collections[idx] = updated;
+    }
+
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.style.display = 'block';
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => { el.style.display = 'none'; }, 2000);
+    }
+
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Close modals on backdrop click
+    document.querySelectorAll('.modal-overlay').forEach(o => {
+      o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); });
+    });
+
+    document.addEventListener('DOMContentLoaded', initAuth);
+  </script>
+</body>
+</html>

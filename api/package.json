@@ -1,0 +1,17 @@
+{
+  "name": "gridops-launchpad-api",
+  "version": "1.0.0",
+  "description": "GridOps LaunchPad API - Azure Functions v4",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "func start",
+    "build": "echo No build step required"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "@azure/storage-blob": "^12.17.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

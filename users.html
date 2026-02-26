@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GridOps LaunchPad — Users</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+  <style>
+    :root {
+      --bg: #f0f4f8; --surface: #ffffff; --surface2: #eaeff5;
+      --border: #d0d8e4; --border-light: #b8c4d4;
+      --text: #0f172a; --text-dim: #4b5a6e; --text-muted: #8898a8;
+      --accent: #0078d4; --accent-dim: rgba(0,120,212,0.1);
+      --danger: #dc2626; --danger-dim: rgba(220,38,38,0.1);
+      --green: #16a34a; --green-dim: rgba(22,163,74,0.1);
+      --orange: #d97706; --orange-dim: rgba(217,119,6,0.1);
+      --row-hover: rgba(0,120,212,0.04); --row-selected: rgba(0,120,212,0.08);
+      --font-mono: 'IBM Plex Mono', monospace; --font-sans: 'IBM Plex Sans', sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-sans); background: var(--bg); color: var(--text); font-size: 13px; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+    .header { display: flex; align-items: center; gap: 12px; padding: 10px 24px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .header-brand { font-family: var(--font-mono); font-weight: 600; font-size: 14px; color: var(--accent); letter-spacing: -0.5px; }
+    .header-brand span { color: var(--text-dim); font-weight: 400; }
+    .header-title { font-size: 14px; font-weight: 600; }
+    .header-sep { width: 1px; height: 24px; background: var(--border); }
+    .header-spacer { flex: 1; }
+    .back-link { font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 500; }
+    .back-link:hover { text-decoration: underline; }
+    .signin-btn { background: var(--accent); border: 1px solid var(--accent); color: #fff; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-family: var(--font-sans); font-size: 12px; font-weight: 500; }
+    .user-info { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 11px; }
+    .user-email { color: var(--text-dim); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+    .signout-btn:hover { background: var(--danger-dim); color: var(--danger); border-color: var(--danger); }
+
+    .state-msg { text-align: center; padding: 80px 24px; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .state-msg h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .state-msg p { font-size: 13px; color: var(--text-dim); }
+
+    .main-content { flex: 1; overflow-y: auto; padding: 24px; }
+    .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 24px; }
+    .section-header { padding: 12px 16px; background: var(--surface2); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+    .section-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); flex: 1; }
+
+    .add-form { display: flex; gap: 8px; align-items: flex-end; padding: 12px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-dim); }
+    .form-input { padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--font-sans); font-size: 13px; color: var(--text); background: var(--surface); }
+    .form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); }
+    .form-input.email { width: 240px; }
+    .form-input.name { width: 160px; }
+    select.form-input { width: 110px; }
+
+    .tb-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-family: var(--font-sans); font-size: 12px; font-weight: 500; transition: all 0.15s; white-space: nowrap; }
+    .tb-btn:hover { background: var(--border); }
+    .tb-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .tb-btn.primary:hover { background: #005a9e; }
+    .tb-btn.danger { color: var(--danger); }
+    .tb-btn.danger:hover { background: var(--danger-dim); border-color: var(--danger); }
+    .tb-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { background: var(--surface2); border-bottom: 2px solid var(--border); padding: 8px 12px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); text-align: left; white-space: nowrap; }
+    .data-table td { border-bottom: 1px solid var(--border); padding: 8px 12px; font-size: 13px; vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: var(--row-hover); }
+    .data-table td select { padding: 3px 6px; border: 1px solid var(--border); border-radius: 3px; font-family: var(--font-sans); font-size: 12px; background: var(--surface); color: var(--text); }
+    .data-table td select:focus { outline: none; border-color: var(--accent); }
+    .remove-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 15px; padding: 2px 6px; border-radius: 3px; line-height: 1; }
+    .remove-btn:hover { background: var(--danger-dim); color: var(--danger); }
+    .badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 3px; }
+    .badge.admin { color: var(--accent); background: var(--accent-dim); }
+    .badge.user { color: var(--text-muted); background: var(--surface2); }
+    .badge.viewer { color: var(--orange); background: var(--orange-dim); }
+    .badge.inactive { color: var(--danger); background: var(--danger-dim); }
+    .badge.active { color: var(--green); background: var(--green-dim); }
+
+    .toast { position: fixed; bottom: 20px; right: 20px; background: var(--text); color: white; padding: 10px 16px; border-radius: 6px; font-size: 12px; font-weight: 500; z-index: 999; display: none; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-brand">GridOps <span>LaunchPad</span></div>
+    <div class="header-sep"></div>
+    <div class="header-title">User Management</div>
+    <div class="header-spacer"></div>
+    <a href="admin.html" class="back-link">Collections</a>
+    <div class="header-sep"></div>
+    <a href="index.html" class="back-link">← Back to LaunchPad</a>
+    <div class="header-sep"></div>
+    <div id="auth-area"><button class="signin-btn" onclick="signIn()">Sign in</button></div>
+  </div>
+
+  <div id="loading" class="state-msg"><h2>Loading...</h2></div>
+  <div id="access-denied" class="state-msg" style="display:none"><h2>Access Denied</h2><p>Admin role required.</p></div>
+
+  <div class="main-content" id="main-content" style="display:none">
+    <div class="section-card">
+      <div class="section-header">
+        <span class="section-title">Allowed Users</span>
+        <span id="user-count" style="font-size:11px;color:var(--text-muted)"></span>
+      </div>
+
+      <!-- Add user form -->
+      <div class="add-form">
+        <div class="form-group">
+          <label class="form-label">Email *</label>
+          <input class="form-input email" id="add-email" type="email" placeholder="user@example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input class="form-input name" id="add-name" type="text" placeholder="Full name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          <select class="form-input" id="add-role">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+            <option value="viewer">Viewer</option>
+          </select>
+        </div>
+        <button class="tb-btn primary" onclick="addUser()">Add User</button>
+      </div>
+
+      <!-- Users table -->
+      <table class="data-table" id="users-table">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const MSAL_CONFIG = {
+      auth: { clientId: 'f6c71447-d931-4690-aa7a-a43b5c261c71', authority: 'https://login.microsoftonline.com/common', redirectUri: window.location.origin },
+      cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: false }
+    };
+    const TOKEN_REQUEST = { scopes: ['openid', 'profile', 'email', 'User.Read'] };
+    let msalInstance, authToken;
+
+    async function initAuth() {
+      msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+      await msalInstance.initialize();
+      const res = await msalInstance.handleRedirectPromise();
+      if (res) { authToken = res.idToken; await boot(); return; }
+      const accounts = msalInstance.getAllAccounts();
+      if (accounts.length > 0) {
+        try { const r = await msalInstance.acquireTokenSilent({ ...TOKEN_REQUEST, account: accounts[0] }); authToken = r.idToken; await boot(); }
+        catch { msalInstance.loginRedirect(TOKEN_REQUEST); }
+      } else { msalInstance.loginRedirect(TOKEN_REQUEST); }
+    }
+    function signIn() { msalInstance.loginRedirect(TOKEN_REQUEST); }
+    async function signOut() { await msalInstance.logoutRedirect(); }
+
+    function hdrs() { return { 'Content-Type': 'application/json', 'X-Auth-Token': authToken }; }
+    async function apiGet(p) { const r = await fetch('/api' + p, { headers: hdrs() }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
+    async function apiPost(p, b) { const r = await fetch('/api' + p, { method: 'POST', headers: hdrs(), body: JSON.stringify(b) }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
+    async function apiPut(p, b) { const r = await fetch('/api' + p, { method: 'PUT', headers: hdrs(), body: JSON.stringify(b) }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
+    async function apiDel(p) { const r = await fetch('/api' + p, { method: 'DELETE', headers: hdrs() }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
+
+    let currentEtag = null;
+    let users = [];
+
+    async function boot() {
+      try {
+        const me = await apiGet('/me');
+        if (me.role !== 'admin') {
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('access-denied').style.display = 'flex';
+          return;
+        }
+        const initials = (me.name || me.email).split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        document.getElementById('auth-area').innerHTML = `
+          <div class="user-info">
+            <div class="user-avatar">${initials}</div>
+            <span class="user-email">${me.email}</span>
+            <button class="signout-btn" onclick="signOut()">Sign out</button>
+          </div>`;
+        await loadUsers();
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('main-content').style.display = 'block';
+      } catch (err) {
+        document.getElementById('loading').innerHTML = `<h2>Error</h2><p>${err.message}</p>`;
+      }
+    }
+
+    async function loadUsers() {
+      const data = await apiGet('/users');
+      users = data.users || [];
+      currentEtag = data.etag;
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('users-tbody');
+      document.getElementById('user-count').textContent = `${users.length} user${users.length !== 1 ? 's' : ''}`;
+
+      if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">No users yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = users.map((u, i) => {
+        const isActive = u.active !== false;
+        return `
+          <tr>
+            <td style="font-family:var(--font-mono);font-size:12px">${escHtml(u.email)}</td>
+            <td>${escHtml(u.name || '')}</td>
+            <td>
+              <select onchange="changeRole('${escHtml(u.email)}', this.value)">
+                <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
+                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+                <option value="viewer" ${u.role === 'viewer' ? 'selected' : ''}>Viewer</option>
+              </select>
+            </td>
+            <td>
+              <button class="tb-btn ${isActive ? 'danger' : 'primary'}" style="font-size:11px;padding:3px 8px"
+                onclick="${isActive ? `deactivateUser('${escHtml(u.email)}')` : `activateUser('${escHtml(u.email)}')`}">
+                ${isActive ? 'Deactivate' : 'Activate'}
+              </button>
+            </td>
+            <td>
+              <button class="remove-btn" onclick="removeUser('${escHtml(u.email)}')" title="Remove user">✕</button>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    async function addUser() {
+      const email = document.getElementById('add-email').value.trim().toLowerCase();
+      const name = document.getElementById('add-name').value.trim();
+      const role = document.getElementById('add-role').value;
+      if (!email || !email.includes('@')) { document.getElementById('add-email').focus(); return; }
+      try {
+        const data = await apiPost('/users', { email, name, role, etag: currentEtag });
+        users = data.users;
+        currentEtag = null; // will be refreshed on next load
+        await loadUsers();
+        document.getElementById('add-email').value = '';
+        document.getElementById('add-name').value = '';
+        toast('User added');
+      } catch (err) {
+        if (err.message.includes('conflict')) { await loadUsers(); alert('User list changed — refreshed'); }
+        else alert('Error: ' + err.message);
+      }
+    }
+
+    async function changeRole(email, role) {
+      try {
+        const data = await apiPut('/users', { email, role, etag: currentEtag });
+        users = data.users;
+        await loadUsers();
+        toast('Role updated');
+      } catch (err) {
+        if (err.message.includes('last admin') || err.message.includes('last active admin')) alert(err.message);
+        else { await loadUsers(); alert('Error: ' + err.message); }
+      }
+    }
+
+    async function deactivateUser(email) {
+      if (!confirm(`Deactivate ${email}? They will lose access.`)) return;
+      try {
+        const data = await apiPut('/users', { email, active: false, etag: currentEtag });
+        users = data.users;
+        await loadUsers();
+        toast('User deactivated');
+      } catch (err) { await loadUsers(); alert('Error: ' + err.message); }
+    }
+
+    async function activateUser(email) {
+      try {
+        const data = await apiPut('/users', { email, active: true, etag: currentEtag });
+        users = data.users;
+        await loadUsers();
+        toast('User activated');
+      } catch (err) { await loadUsers(); alert('Error: ' + err.message); }
+    }
+
+    async function removeUser(email) {
+      if (!confirm(`Remove ${email}? This cannot be undone.`)) return;
+      try {
+        const params = new URLSearchParams({ email, etag: currentEtag || '' });
+        const r = await fetch(`/api/users?${params}`, { method: 'DELETE', headers: hdrs() });
+        if (!r.ok) throw new Error(await r.text());
+        await loadUsers();
+        toast('User removed');
+      } catch (err) { await loadUsers(); alert('Error: ' + err.message); }
+    }
+
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg; el.style.display = 'block';
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { el.style.display = 'none'; }, 2000);
+    }
+
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    document.addEventListener('DOMContentLoaded', initAuth);
+  </script>
+</body>
+</html>
