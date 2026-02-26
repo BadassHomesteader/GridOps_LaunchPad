@@ -64,6 +64,16 @@
 
     .data-table { width: 100%; border-collapse: collapse; }
     .data-table th { background: var(--surface2); border-bottom: 2px solid var(--border); padding: 8px 12px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); text-align: left; white-space: nowrap; }
+    .data-table th.sortable { cursor: pointer; user-select: none; }
+    .data-table th.sortable:hover { background: var(--border); color: var(--text); }
+    .data-table th.sort-active { color: var(--accent); }
+    .sort-arrow { margin-left: 3px; font-size: 10px; opacity: 0.4; }
+    .sort-arrow.on { opacity: 1; }
+    .filter-bar { display: flex; gap: 8px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .filter-input { padding: 5px 10px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--font-sans); font-size: 12px; color: var(--text); background: var(--surface); }
+    .filter-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); }
+    .filter-search { width: 220px; }
+    .filter-select { width: 120px; }
     .data-table td { border-bottom: 1px solid var(--border); padding: 8px 12px; font-size: 13px; vertical-align: middle; }
     .data-table tr:last-child td { border-bottom: none; }
     .data-table tr:hover td { background: var(--row-hover); }
@@ -119,6 +129,22 @@
         <span id="user-count" style="font-size:11px;color:var(--text-muted)"></span>
       </div>
 
+      <!-- Filter bar -->
+      <div class="filter-bar">
+        <input class="filter-input filter-search" type="search" placeholder="Search email or name…" oninput="filterText=this.value;renderTable()">
+        <select class="filter-input filter-select" onchange="filterRole=this.value;renderTable()">
+          <option value="">All Roles</option>
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+          <option value="viewer">Viewer</option>
+        </select>
+        <select class="filter-input filter-select" onchange="filterStatus=this.value;renderTable()">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
       <!-- Add user form -->
       <div class="add-form">
         <div class="form-group">
@@ -144,10 +170,10 @@
       <table class="data-table" id="users-table">
         <thead>
           <tr>
-            <th>Email</th>
-            <th>Name</th>
-            <th>Role</th>
-            <th>Status</th>
+            <th class="sortable" data-col="email" onclick="setSort('email')">Email<span class="sort-arrow"></span></th>
+            <th class="sortable" data-col="name" onclick="setSort('name')">Name<span class="sort-arrow on"> ▲</span></th>
+            <th class="sortable" data-col="role" onclick="setSort('role')">Role<span class="sort-arrow"></span></th>
+            <th class="sortable" data-col="status" onclick="setSort('status')">Status<span class="sort-arrow"></span></th>
             <th></th>
           </tr>
         </thead>
@@ -215,6 +241,14 @@
 
     let currentEtag = null;
     let users = [];
+    let sortCol = 'name', sortDir = 'asc';
+    let filterText = '', filterRole = '', filterStatus = '';
+
+    function setSort(col) {
+      if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      else { sortCol = col; sortDir = 'asc'; }
+      renderTable();
+    }
 
     async function boot() {
       try {
@@ -248,14 +282,50 @@
 
     function renderTable() {
       const tbody = document.getElementById('users-tbody');
-      document.getElementById('user-count').textContent = `${users.length} user${users.length !== 1 ? 's' : ''}`;
 
-      if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">No users yet.</td></tr>';
+      // Filter
+      let rows = users.filter(u => {
+        if (filterText) {
+          const q = filterText.toLowerCase();
+          if (!u.email.toLowerCase().includes(q) && !(u.name || '').toLowerCase().includes(q)) return false;
+        }
+        if (filterRole && u.role !== filterRole) return false;
+        if (filterStatus === 'active' && u.active === false) return false;
+        if (filterStatus === 'inactive' && u.active !== false) return false;
+        return true;
+      });
+
+      // Sort
+      rows.sort((a, b) => {
+        let av, bv;
+        if (sortCol === 'email')       { av = a.email.toLowerCase(); bv = b.email.toLowerCase(); }
+        else if (sortCol === 'name')   { av = (a.name || '').toLowerCase(); bv = (b.name || '').toLowerCase(); }
+        else if (sortCol === 'role')   { av = a.role || ''; bv = b.role || ''; }
+        else if (sortCol === 'status') { av = a.active !== false ? 0 : 1; bv = b.active !== false ? 0 : 1; }
+        if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+        return sortDir === 'asc' ? av - bv : bv - av;
+      });
+
+      // Update count
+      const shown = rows.length, total = users.length;
+      document.getElementById('user-count').textContent = shown === total
+        ? `${total} user${total !== 1 ? 's' : ''}`
+        : `${shown} of ${total} users`;
+
+      // Update sort indicators
+      document.querySelectorAll('.data-table th.sortable').forEach(th => {
+        const active = th.dataset.col === sortCol;
+        th.classList.toggle('sort-active', active);
+        const arrow = th.querySelector('.sort-arrow');
+        if (arrow) { arrow.textContent = active ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''; arrow.classList.toggle('on', active); }
+      });
+
+      if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">${users.length === 0 ? 'No users yet.' : 'No users match the filter.'}</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = users.map((u, i) => {
+      tbody.innerHTML = rows.map(u => {
         const isActive = u.active !== false;
         return `
           <tr ondblclick="openEditModal('${escHtml(u.email)}')" title="Double-click to edit">
