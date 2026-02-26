@@ -193,6 +193,7 @@
     let msalInstance, authToken;
 
     async function initAuth() {
+      if (typeof msal === 'undefined') throw new Error('Auth library failed to load. Check network and refresh.');
       msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
       await msalInstance.initialize();
       const res = await msalInstance.handleRedirectPromise();
@@ -391,7 +392,16 @@
       return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    document.addEventListener('DOMContentLoaded', initAuth);
+    document.addEventListener('DOMContentLoaded', () => {
+      const _lt = setTimeout(() => {
+        const el = document.getElementById('loading');
+        if (el && el.style.display !== 'none') el.innerHTML = '<h2>Loading timed out</h2><p>The page is taking too long. <button class="signin-btn" onclick="location.reload()">Refresh</button></p>';
+      }, 20000);
+      initAuth().catch(err => {
+        clearTimeout(_lt);
+        document.getElementById('loading').innerHTML = `<h2>Initialization Error</h2><p>${err.message || err}</p><p style="margin-top:10px"><button class="signin-btn" onclick="location.reload()">Refresh</button></p>`;
+      });
+    });
   </script>
 </body>
 </html>
