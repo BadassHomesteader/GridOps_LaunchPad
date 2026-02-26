@@ -731,8 +731,6 @@
     function renderContent() {
       const container = document.getElementById('content');
       const sections = buildSections();
-      const isAllView = activeFilter === 'all';
-
       let titleText = 'All Links';
       if (activeFilter === '__personal__') titleText = 'My Links';
       else if (activeFilter !== 'all') {
@@ -746,30 +744,18 @@
           <h1 class="page-title">${escHtml(titleText)}</h1>
         </div>`;
 
-      const sectionsHtml = sections.map(section => renderSection(section, isAllView)).join('');
+      const sectionsHtml = sections.map(section => renderSection(section)).join('');
 
       const allEmpty = sections.every(s => s.links.length === 0);
       container.innerHTML = header + (allEmpty && searchQuery
         ? `<div class="empty-state"><div class="empty-state-icon">🔍</div><p class="empty-state-text">No links match "<strong>${escHtml(searchQuery)}</strong>"</p></div>`
         : sectionsHtml);
 
-      container.querySelectorAll('.show-more-btn').forEach(btn => {
-        btn.addEventListener('click', e => {
-          const sectionEl = e.target.closest('.section');
-          const filterId = sectionEl.dataset.id;
-          const navBtn = document.querySelector(`.nav-item[data-filter="${filterId}"]`);
-          if (navBtn) navBtn.click();
-        });
-      });
-
       focusedCardIndex = -1;
     }
 
-    function renderSection(section, isAllView) {
+    function renderSection(section) {
       const { id, name, icon, links, personal } = section;
-      const hasMore = links.length > 4;
-      const collapsed = isAllView && hasMore ? 'collapsed' : '';
-      const hidden = links.length - 4;
       const color = collColor(section);
       const colorVars = `--c-bg:${color.bg};--c-border:${color.border};--c-glow:${color.glow}`;
 
@@ -780,16 +766,15 @@
       const cardsHtml = links.map((link, idx) => renderCard(link, personal, idx)).join('');
 
       return `
-        <section class="section ${collapsed}" data-id="${escHtml(id)}" style="${colorVars}">
+        <section class="section" data-id="${escHtml(id)}" style="${colorVars}">
           <div class="section-header">
             <span class="section-icon">${icon || '🔗'}</span>
             <h2 class="section-title">${escHtml(name)}</h2>
             <span class="section-count">${links.length}</span>
             ${addBtn}
           </div>
-          <ul class="cards-container" style="position:relative">
+          <ul class="cards-container">
             ${cardsHtml || `<li style="grid-column:1/-1"><div class="empty-state" style="padding:1.5rem"><div class="empty-state-icon" style="font-size:1.75rem">🔗</div><p class="empty-state-text">${personal ? 'No personal links yet. Click + Add to get started.' : 'No links in this category yet.'}</p></div></li>`}
-            ${hasMore ? `<li class="more-btn-wrapper"><button class="show-more-btn" data-count="+${hidden}">›</button></li>` : ''}
           </ul>
         </section>`;
     }
