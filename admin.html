@@ -718,7 +718,7 @@
     function setTriggerIcon(btnId, key) {
       const btn = document.getElementById(btnId);
       if (!btn) return;
-      if (key && window.ICONS[key]) {
+      if (key && window.ICONS && window.ICONS[key]) {
         btn.innerHTML = renderIcon(key, 18);
       } else {
         btn.innerHTML = renderIcon('link', 18);
