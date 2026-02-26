@@ -223,7 +223,7 @@
     .card.focused { transform: translateY(-3px); border-color: var(--color-accent); box-shadow: var(--shadow-card-hover), 0 0 0 3px rgba(0,120,212,0.12); }
     .card-title { display: flex; align-items: center; gap: 10px; margin-bottom: 0.375rem; }
     .card-icon-chip { width: 32px; height: 32px; border-radius: 8px; background: var(--c-bg, rgba(0,120,212,0.1)); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; color: var(--color-text-secondary); }
-    .card-icon-chip.svg-icon { background: rgba(0,0,0,0.04); color: var(--c-border, rgba(0,120,212,0.5)); }
+    .card-icon-chip.svg-icon { background: var(--c-bg, rgba(0,120,212,0.1)); color: var(--c-icon, rgba(0,120,212,0.75)); }
     .card-icon-chip img { width: 18px; height: 18px; border-radius: 3px; object-fit: contain; }
     .card-favicon { width: 18px; height: 18px; border-radius: 3px; flex-shrink: 0; object-fit: contain; }
     @keyframes cardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -759,7 +759,7 @@
     function renderSection(section) {
       const { id, name, icon, links, personal } = section;
       const color = collColor(section);
-      const colorVars = `--c-bg:${color.bg};--c-border:${color.border};--c-glow:${color.glow}`;
+      const colorVars = `--c-bg:${color.bg};--c-border:${color.border};--c-glow:${color.glow};--c-icon:${color.icon}`;
 
       const addBtn = personal
         ? `<button class="section-add-btn" onclick="openAddLinkModal()">+ Add</button>`
@@ -962,16 +962,16 @@
 
     // ── Collection colors ─────────────────────────────────────────────────
     const COLL_COLORS = [
-      { bg:'rgba(0,120,212,0.1)',   border:'rgba(0,120,212,0.28)',   glow:'rgba(0,120,212,0.08)'   },
-      { bg:'rgba(22,163,74,0.1)',   border:'rgba(22,163,74,0.28)',   glow:'rgba(22,163,74,0.08)'   },
-      { bg:'rgba(124,58,237,0.1)',  border:'rgba(124,58,237,0.28)',  glow:'rgba(124,58,237,0.08)'  },
-      { bg:'rgba(8,145,178,0.1)',   border:'rgba(8,145,178,0.28)',   glow:'rgba(8,145,178,0.08)'   },
-      { bg:'rgba(219,39,119,0.1)',  border:'rgba(219,39,119,0.28)',  glow:'rgba(219,39,119,0.08)'  },
-      { bg:'rgba(101,163,13,0.1)',  border:'rgba(101,163,13,0.28)',  glow:'rgba(101,163,13,0.08)'  },
-      { bg:'rgba(217,119,6,0.1)',   border:'rgba(217,119,6,0.28)',   glow:'rgba(217,119,6,0.08)'   },
-      { bg:'rgba(220,38,38,0.1)',   border:'rgba(220,38,38,0.28)',   glow:'rgba(220,38,38,0.08)'   },
+      { bg:'rgba(0,120,212,0.1)',   border:'rgba(0,120,212,0.28)',   glow:'rgba(0,120,212,0.08)',   icon:'rgba(0,100,190,0.75)'   },
+      { bg:'rgba(22,163,74,0.1)',   border:'rgba(22,163,74,0.28)',   glow:'rgba(22,163,74,0.08)',   icon:'rgba(16,130,58,0.8)'    },
+      { bg:'rgba(124,58,237,0.1)',  border:'rgba(124,58,237,0.28)',  glow:'rgba(124,58,237,0.08)',  icon:'rgba(109,40,217,0.8)'   },
+      { bg:'rgba(8,145,178,0.1)',   border:'rgba(8,145,178,0.28)',   glow:'rgba(8,145,178,0.08)',   icon:'rgba(6,120,155,0.8)'    },
+      { bg:'rgba(219,39,119,0.1)',  border:'rgba(219,39,119,0.28)',  glow:'rgba(219,39,119,0.08)',  icon:'rgba(190,28,100,0.8)'   },
+      { bg:'rgba(101,163,13,0.1)',  border:'rgba(101,163,13,0.28)',  glow:'rgba(101,163,13,0.08)',  icon:'rgba(80,130,10,0.85)'   },
+      { bg:'rgba(217,119,6,0.1)',   border:'rgba(217,119,6,0.28)',   glow:'rgba(217,119,6,0.08)',   icon:'rgba(180,95,4,0.85)'    },
+      { bg:'rgba(220,38,38,0.1)',   border:'rgba(220,38,38,0.28)',   glow:'rgba(220,38,38,0.08)',   icon:'rgba(185,25,25,0.8)'    },
     ];
-    const PERSONAL_COLOR = { bg:'rgba(217,119,6,0.1)', border:'rgba(217,119,6,0.28)', glow:'rgba(217,119,6,0.08)' };
+    const PERSONAL_COLOR = { bg:'rgba(217,119,6,0.1)', border:'rgba(217,119,6,0.28)', glow:'rgba(217,119,6,0.08)', icon:'rgba(180,95,4,0.85)' };
     function collColor(section) {
       if (section.personal) return PERSONAL_COLOR;
       const idx = allCollections.findIndex(c => c.id === section.id);
