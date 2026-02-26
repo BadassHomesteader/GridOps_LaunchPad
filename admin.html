@@ -90,6 +90,10 @@
     .links-table tr:hover td { background: var(--row-hover); }
     .links-table td a { color: var(--accent); text-decoration: none; font-family: var(--font-mono); font-size: 11px; }
     .links-table td a:hover { text-decoration: underline; }
+    .drag-handle { cursor: grab; color: var(--text-muted); user-select: none; font-size: 15px; line-height: 1; display: inline-block; padding: 0 2px; }
+    .drag-handle:active { cursor: grabbing; }
+    .links-table tr.dragging td { opacity: 0.4; }
+    .links-table tr.drag-over td { background: var(--accent-dim) !important; border-top: 2px solid var(--accent); }
 
     /* Sharing table */
     .sharing-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
@@ -193,7 +197,7 @@
             </div>
           </div>
           <table class="links-table" id="links-table">
-            <thead><tr><th>Name</th><th>URL</th><th>Description</th><th></th></tr></thead>
+            <thead><tr><th style="width:20px"></th><th>Name</th><th>URL</th><th>Description</th><th></th></tr></thead>
             <tbody id="links-tbody"></tbody>
           </table>
         </div>
@@ -384,11 +388,12 @@
     function renderLinksTable(links) {
       const tbody = document.getElementById('links-tbody');
       if (links.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:16px">No links yet. Add one above.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:16px">No links yet. Add one above.</td></tr>';
         return;
       }
       tbody.innerHTML = links.map((l, i) => `
-        <tr>
+        <tr draggable="true" data-index="${i}">
+          <td><span class="drag-handle" title="Drag to reorder">⠿</span></td>
           <td>${escHtml(l.name)}</td>
           <td><a href="${escHtml(l.url)}" target="_blank" title="${escHtml(l.url)}">${escHtml(l.url.length > 40 ? l.url.substring(0,40) + '…' : l.url)}</a></td>
           <td style="color:var(--text-muted)">${escHtml(l.description || '')}</td>
@@ -397,6 +402,45 @@
             <button class="icon-btn danger" onclick="removeLink(${i})" title="Remove">✕</button>
           </td>
         </tr>`).join('');
+      initLinksDragDrop();
+    }
+
+    function initLinksDragDrop() {
+      const tbody = document.getElementById('links-tbody');
+      let dragSrcIndex = null;
+      tbody.querySelectorAll('tr[draggable]').forEach(row => {
+        row.addEventListener('dragstart', e => {
+          dragSrcIndex = parseInt(row.dataset.index);
+          row.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        row.addEventListener('dragend', () => {
+          row.classList.remove('dragging');
+          tbody.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
+        });
+        row.addEventListener('dragover', e => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          tbody.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
+          row.classList.add('drag-over');
+        });
+        row.addEventListener('drop', async e => {
+          e.preventDefault();
+          const dropIndex = parseInt(row.dataset.index);
+          if (dragSrcIndex === null || dragSrcIndex === dropIndex) return;
+          const col = selectedCollection();
+          if (!col) return;
+          const links = [...(col.links || [])];
+          const [moved] = links.splice(dragSrcIndex, 1);
+          links.splice(dropIndex, 0, moved);
+          try {
+            const updated = await apiPut(`/collections/${col.id}`, { links });
+            mergeCollection(updated);
+            renderLinksTable(updated.links);
+            toast('Order saved');
+          } catch (err) { alert('Error: ' + err.message); }
+        });
+      });
     }
 
     function renderSharingTable(sharedWith) {
