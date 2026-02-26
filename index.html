@@ -212,16 +212,17 @@
     .section-add-btn:hover { background: rgba(0,120,212,0.18); }
 
     /* ── Cards ── */
-    .cards-container { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .cards-container { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.75rem; }
     .card {
       position: relative; background: var(--color-bg-elevated);
       border: 1px solid var(--color-border); border-radius: var(--radius-lg);
-      padding: 1.25rem 1.375rem; box-shadow: var(--shadow-card);
+      padding: 1.25rem 1rem; box-shadow: var(--shadow-card);
       transition: all var(--transition-smooth);
+      min-height: 110px; display: flex; flex-direction: column; align-items: center; text-align: center;
     }
     .card:hover { transform: translateY(-3px); border-color: var(--c-border, rgba(0,120,212,0.25)); box-shadow: var(--shadow-card-hover), 0 0 20px var(--c-glow, rgba(0,120,212,0.07)); }
     .card.focused { transform: translateY(-3px); border-color: var(--color-accent); box-shadow: var(--shadow-card-hover), 0 0 0 3px rgba(0,120,212,0.12); }
-    .card-title { display: flex; align-items: center; gap: 10px; margin-bottom: 0.375rem; }
+    .card-title { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin-bottom: 0.375rem; }
     .card-icon-chip { width: 32px; height: 32px; border-radius: 8px; background: var(--c-bg, rgba(0,120,212,0.1)); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; color: var(--color-text-secondary); }
     .card-icon-chip.svg-icon { background: var(--c-bg, rgba(0,120,212,0.1)); color: var(--c-icon, rgba(0,120,212,0.75)); }
     .card-icon-chip img { width: 18px; height: 18px; border-radius: 3px; object-fit: contain; }
@@ -230,9 +231,9 @@
     .card { animation: cardIn 0.25s ease both; }
     .card h3 { font-size: 0.9375rem; font-weight: 600; margin-bottom: 0; letter-spacing: -0.01em; }
     .card a { color: var(--color-text); text-decoration: none; }
-    .card a::after { content: ''; position: absolute; inset: -1.25rem -1.375rem; }
+    .card a::after { content: ''; position: absolute; inset: -1.25rem -1rem; }
     .card:hover h3 a { color: var(--color-accent); }
-    .card .description { color: var(--color-text-secondary); font-size: 0.7875rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .card .description { color: var(--color-text-secondary); font-size: 0.7875rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-align: center; }
     .card-arrow { position: absolute; bottom: 1.125rem; right: 1.125rem; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; color: var(--color-accent); background: var(--color-bg); border-radius: 50%; font-size: 0.7rem; opacity: 0; transform: translate(-3px, 3px); transition: all var(--transition-smooth); }
     .card:hover .card-arrow { opacity: 1; transform: translate(0,0); }
 
