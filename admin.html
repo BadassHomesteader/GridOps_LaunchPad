@@ -6,6 +6,7 @@
   <title>GridOps LaunchPad — Admin</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+  <script src="icons.js"></script>
   <style>
     :root {
       --bg: #f0f4f8; --surface: #ffffff; --surface2: #eaeff5;
@@ -115,16 +116,21 @@
     .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
     .btn.primary:hover { background: #005a9e; }
 
-    /* Emoji picker */
-    .emoji-picker-wrap { position: relative; }
-    .emoji-btn { width: 100%; height: 38px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s; }
-    .emoji-btn:hover { border-color: var(--accent); }
-    .emoji-btn.open { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,120,212,0.15); }
-    .emoji-picker-popup { position: fixed; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 600; display: none; width: 248px; }
-    .emoji-picker-popup.open { display: block; }
-    .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
-    .emoji-opt { width: 28px; height: 28px; background: none; border: none; cursor: pointer; font-size: 17px; border-radius: 4px; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 1; }
-    .emoji-opt:hover { background: var(--surface2); }
+    /* Icon picker */
+    .icon-picker-wrap { position: relative; }
+    .icon-trigger-btn { width: 100%; height: 38px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s; color: var(--text-dim); padding: 0; }
+    .icon-trigger-btn:hover { border-color: var(--accent); color: var(--text); }
+    .icon-trigger-btn.open { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,120,212,0.15); color: var(--text); }
+    .icon-picker-popup { position: fixed; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 600; display: none; width: 288px; }
+    .icon-picker-popup.open { display: block; }
+    .icon-picker-search { width: 100%; padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px; font: inherit; font-size: 12px; margin-bottom: 8px; color: var(--text); background: var(--surface); }
+    .icon-picker-search:focus { outline: none; border-color: var(--accent); }
+    .icon-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; max-height: 200px; overflow-y: auto; }
+    .icon-opt { width: 30px; height: 30px; background: none; border: none; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; padding: 0; color: var(--text-dim); }
+    .icon-opt:hover { background: var(--surface2); color: var(--text); }
+    .icon-opt.selected { background: var(--accent-dim); color: var(--accent); }
+    .icon-clear-btn { width: 100%; margin-top: 8px; padding: 4px; border: 1px solid var(--border); background: none; border-radius: 4px; font: inherit; font-size: 11px; color: var(--text-muted); cursor: pointer; }
+    .icon-clear-btn:hover { background: var(--surface2); color: var(--text); }
 
     .toast { position: fixed; bottom: 20px; right: 20px; background: var(--text); color: white; padding: 10px 16px; border-radius: 6px; font-size: 12px; font-weight: 500; z-index: 999; display: none; animation: slideUp 0.2s ease; }
     @keyframes slideUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
@@ -194,8 +200,8 @@
           <div class="form-row" style="margin-bottom:12px">
             <div class="form-group fixed" style="width:52px">
               <label class="form-label">Icon</label>
-              <div class="emoji-picker-wrap">
-                <button type="button" class="emoji-btn" id="new-icon-btn" onclick="toggleEmojiPicker('new-icon-btn','new-link-icon')">🔗</button>
+              <div class="icon-picker-wrap">
+                <button type="button" class="icon-trigger-btn" id="new-icon-btn" onclick="toggleIconPicker('new-icon-btn','new-link-icon')" title="Choose icon"></button>
                 <input type="hidden" id="new-link-icon" value="">
               </div>
             </div>
@@ -279,8 +285,8 @@
       <div class="form-row" style="margin-bottom:10px">
         <div class="form-group fixed" style="width:52px">
           <label class="form-label">Icon</label>
-          <div class="emoji-picker-wrap">
-            <button type="button" class="emoji-btn" id="edit-icon-btn" onclick="toggleEmojiPicker('edit-icon-btn','edit-link-icon')">🔗</button>
+          <div class="icon-picker-wrap">
+            <button type="button" class="icon-trigger-btn" id="edit-icon-btn" onclick="toggleIconPicker('edit-icon-btn','edit-link-icon')" title="Choose icon"></button>
             <input type="hidden" id="edit-link-icon" value="">
           </div>
         </div>
@@ -306,9 +312,11 @@
 
   <div class="toast" id="toast"></div>
 
-  <!-- Shared emoji picker -->
-  <div id="emoji-picker-popup" class="emoji-picker-popup">
-    <div class="emoji-grid" id="emoji-grid"></div>
+  <!-- Shared icon picker -->
+  <div id="icon-picker-popup" class="icon-picker-popup">
+    <input type="text" class="icon-picker-search" id="icon-search" placeholder="Search icons…" oninput="filterIconGrid(this.value)">
+    <div class="icon-grid" id="icon-grid"></div>
+    <button class="icon-clear-btn" onclick="clearIcon()">Clear icon (use favicon)</button>
   </div>
 
   <script>
@@ -427,8 +435,10 @@
       }
       tbody.innerHTML = links.map((l, i) => {
         let iconHtml = '';
-        if (l.icon) {
-          iconHtml = `<span style="font-size:14px;margin-right:6px;vertical-align:middle">${escHtml(l.icon)}</span>`;
+        if (l.icon && window.ICONS[l.icon]) {
+          iconHtml = `<span style="display:inline-flex;align-items:center;margin-right:6px;color:var(--text-dim);vertical-align:middle">${renderIcon(l.icon, 14)}</span>`;
+        } else if (l.icon) {
+          iconHtml = `<span style="font-size:13px;margin-right:6px;vertical-align:middle">${escHtml(l.icon)}</span>`;
         } else {
           try { iconHtml = `<img src="https://www.google.com/s2/favicons?domain=${new URL(l.url).hostname}&sz=32" alt="" width="14" height="14" style="border-radius:2px;vertical-align:middle;margin-right:6px" onerror="this.style.display='none'">`; } catch {}
         }
@@ -528,7 +538,7 @@
         const updated = await apiPut(`/collections/${col.id}`, { links });
         mergeCollection(updated);
         document.getElementById('new-link-icon').value = '';
-        document.getElementById('new-icon-btn').textContent = '🔗';
+        setTriggerIcon('new-icon-btn', '');
         document.getElementById('new-link-name').value = '';
         document.getElementById('new-link-url').value = '';
         document.getElementById('new-link-desc').value = '';
@@ -556,7 +566,7 @@
       if (!link) return;
       document.getElementById('edit-link-id').value = index;
       document.getElementById('edit-link-icon').value = link.icon || '';
-      document.getElementById('edit-icon-btn').textContent = link.icon || '🔗';
+      setTriggerIcon('edit-icon-btn', link.icon || '');
       document.getElementById('edit-link-name').value = link.name;
       document.getElementById('edit-link-url').value = link.url;
       document.getElementById('edit-link-desc').value = link.description || '';
@@ -684,57 +694,79 @@
       return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    // ── Emoji Picker ──────────────────────────────────────────────────────
-    const EMOJI_LIST = [
-      '📅','📆','🗓️','📋','📝','📄','📃','📊','📈','📉',
-      '🗂️','📁','📂','🗄️','🖥️','💻','📱','⌨️','🖨️','🌐',
-      '🔗','📍','📌','🔖','🏷️','🎯','✅','☑️','✔️','🔍',
-      '⚙️','🔧','🔨','🛠️','🔑','🔒','🔓','🚀','💡','⭐',
-      '📧','💬','📞','☎️','📢','🔔','📣','🏠','🏢','💼',
-      '👥','👤','🤝','🎓','🏆','🥇','⚡','🔥','📐','📏',
-      '🎨','✏️','🖊️','🖋️','💾','🗃️','🗑️','🌍','🗺️','🧭'
-    ];
+    // ── Icon Picker ───────────────────────────────────────────────────────
     let pickerTargetInput = null;
     let pickerTriggerBtn = null;
 
-    function buildEmojiPicker() {
-      const grid = document.getElementById('emoji-grid');
-      grid.innerHTML = EMOJI_LIST.map(e => `<button type="button" class="emoji-opt" data-emoji="${e}">${e}</button>`).join('');
-      grid.querySelectorAll('.emoji-opt').forEach(btn => {
-        btn.addEventListener('click', () => selectEmoji(btn.dataset.emoji));
+    function buildIconGrid(filter = '') {
+      const grid = document.getElementById('icon-grid');
+      const currentVal = pickerTargetInput ? document.getElementById(pickerTargetInput)?.value : '';
+      const keys = Object.keys(window.ICONS).filter(k => !filter || k.includes(filter.toLowerCase()) || (window.ICON_LABELS[k]||'').toLowerCase().includes(filter.toLowerCase()));
+      grid.innerHTML = keys.map(k => {
+        const sel = k === currentVal ? ' selected' : '';
+        return `<button type="button" class="icon-opt${sel}" data-key="${k}" title="${window.ICON_LABELS[k]||k}">${renderIcon(k,16)}</button>`;
+      }).join('');
+      grid.querySelectorAll('.icon-opt').forEach(btn => {
+        btn.addEventListener('click', () => selectIcon(btn.dataset.key));
       });
     }
 
-    function toggleEmojiPicker(btnId, inputId) {
-      const popup = document.getElementById('emoji-picker-popup');
-      if (popup.classList.contains('open') && pickerTargetInput === inputId) { closeEmojiPicker(); return; }
+    function renderIcon(key, size = 18) {
+      return window.renderIcon ? window.renderIcon(key, size) : '';
+    }
+
+    function setTriggerIcon(btnId, key) {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+      if (key && window.ICONS[key]) {
+        btn.innerHTML = renderIcon(key, 18);
+      } else {
+        btn.innerHTML = renderIcon('link', 18);
+      }
+    }
+
+    function toggleIconPicker(btnId, inputId) {
+      const popup = document.getElementById('icon-picker-popup');
+      if (popup.classList.contains('open') && pickerTargetInput === inputId) { closeIconPicker(); return; }
       pickerTargetInput = inputId;
       pickerTriggerBtn = btnId;
+      document.getElementById('icon-search').value = '';
+      buildIconGrid();
       const rect = document.getElementById(btnId).getBoundingClientRect();
       popup.style.top = (rect.bottom + 4) + 'px';
       let left = rect.left;
-      if (left + 248 > window.innerWidth - 8) left = window.innerWidth - 256;
+      if (left + 296 > window.innerWidth - 8) left = window.innerWidth - 300;
       popup.style.left = left + 'px';
       popup.classList.add('open');
       document.getElementById(btnId).classList.add('open');
+      document.getElementById('icon-search').focus();
     }
 
-    function closeEmojiPicker() {
-      document.getElementById('emoji-picker-popup').classList.remove('open');
+    function filterIconGrid(val) { buildIconGrid(val); }
+
+    function closeIconPicker() {
+      document.getElementById('icon-picker-popup').classList.remove('open');
       if (pickerTriggerBtn) document.getElementById(pickerTriggerBtn)?.classList.remove('open');
       pickerTargetInput = null;
       pickerTriggerBtn = null;
     }
 
-    function selectEmoji(emoji) {
+    function selectIcon(key) {
       if (!pickerTargetInput) return;
-      document.getElementById(pickerTargetInput).value = emoji;
-      if (pickerTriggerBtn) document.getElementById(pickerTriggerBtn).textContent = emoji;
-      closeEmojiPicker();
+      document.getElementById(pickerTargetInput).value = key;
+      if (pickerTriggerBtn) setTriggerIcon(pickerTriggerBtn, key);
+      closeIconPicker();
+    }
+
+    function clearIcon() {
+      if (!pickerTargetInput) return;
+      document.getElementById(pickerTargetInput).value = '';
+      if (pickerTriggerBtn) setTriggerIcon(pickerTriggerBtn, '');
+      closeIconPicker();
     }
 
     document.addEventListener('click', e => {
-      if (!e.target.closest('.emoji-picker-wrap') && !e.target.closest('#emoji-picker-popup')) closeEmojiPicker();
+      if (!e.target.closest('.icon-picker-wrap') && !e.target.closest('#icon-picker-popup')) closeIconPicker();
     });
 
     // Close modals on backdrop click
@@ -742,7 +774,10 @@
       o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); });
     });
 
-    document.addEventListener('DOMContentLoaded', () => { buildEmojiPicker(); initAuth(); });
+    document.addEventListener('DOMContentLoaded', () => {
+      setTriggerIcon('new-icon-btn', '');
+      initAuth();
+    });
   </script>
 </body>
 </html>
