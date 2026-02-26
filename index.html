@@ -198,7 +198,7 @@
     /* ── Sections ── */
     .section { margin-bottom: 2.75rem; }
     .section-header { display: flex; align-items: center; gap: 0.625rem; margin-bottom: 1.125rem; }
-    .section-icon { font-size: 1.125rem; opacity: 0.75; }
+    .section-icon { font-size: 1rem; width: 30px; height: 30px; border-radius: 8px; background: var(--c-bg, rgba(0,120,212,0.1)); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .section-title { font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.01em; }
     .section-count { font-family: 'JetBrains Mono', monospace; font-size: 0.675rem; color: var(--color-text-secondary); padding: 0.175rem 0.45rem; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 100px; }
     .section-add-btn {
@@ -218,10 +218,14 @@
       padding: 1.25rem 1.375rem; box-shadow: var(--shadow-card);
       transition: all var(--transition-smooth);
     }
-    .card:hover { transform: translateY(-3px); border-color: rgba(0,120,212,0.25); box-shadow: var(--shadow-card-hover), 0 0 24px rgba(0,120,212,0.07); }
+    .card:hover { transform: translateY(-3px); border-color: var(--c-border, rgba(0,120,212,0.25)); box-shadow: var(--shadow-card-hover), 0 0 20px var(--c-glow, rgba(0,120,212,0.07)); }
     .card.focused { transform: translateY(-3px); border-color: var(--color-accent); box-shadow: var(--shadow-card-hover), 0 0 0 3px rgba(0,120,212,0.12); }
-    .card-title { display: flex; align-items: center; gap: 7px; margin-bottom: 0.3rem; }
-    .card-favicon { width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0; object-fit: contain; }
+    .card-title { display: flex; align-items: center; gap: 10px; margin-bottom: 0.375rem; }
+    .card-icon-chip { width: 32px; height: 32px; border-radius: 8px; background: var(--c-bg, rgba(0,120,212,0.1)); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+    .card-icon-chip img { width: 18px; height: 18px; border-radius: 3px; object-fit: contain; }
+    .card-favicon { width: 18px; height: 18px; border-radius: 3px; flex-shrink: 0; object-fit: contain; }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .card { animation: cardIn 0.25s ease both; }
     .card h3 { font-size: 0.9375rem; font-weight: 600; margin-bottom: 0; letter-spacing: -0.01em; }
     .card a { color: var(--color-text); text-decoration: none; }
     .card a::after { content: ''; position: absolute; inset: -1.25rem -1.375rem; }
@@ -766,15 +770,17 @@
       const hasMore = links.length > 4;
       const collapsed = isAllView && hasMore ? 'collapsed' : '';
       const hidden = links.length - 4;
+      const color = collColor(section);
+      const colorVars = `--c-bg:${color.bg};--c-border:${color.border};--c-glow:${color.glow}`;
 
       const addBtn = personal
         ? `<button class="section-add-btn" onclick="openAddLinkModal()">+ Add</button>`
         : '';
 
-      const cardsHtml = links.map(link => renderCard(link, personal)).join('');
+      const cardsHtml = links.map((link, idx) => renderCard(link, personal, idx)).join('');
 
       return `
-        <section class="section ${collapsed}" data-id="${escHtml(id)}">
+        <section class="section ${collapsed}" data-id="${escHtml(id)}" style="${colorVars}">
           <div class="section-header">
             <span class="section-icon">${icon || '🔗'}</span>
             <h2 class="section-title">${escHtml(name)}</h2>
@@ -788,25 +794,25 @@
         </section>`;
     }
 
-    function renderCard(link, editable) {
+    function renderCard(link, editable, animIdx = 0) {
       const editActions = editable ? `
         <div class="card-actions">
           <button class="card-action-btn" onclick="openEditLinkModal('${escHtml(link.id)}');event.stopPropagation()" title="Edit">✎</button>
           <button class="card-action-btn danger" onclick="deletePersonalLink('${escHtml(link.id)}');event.stopPropagation()" title="Delete">✕</button>
         </div>` : '';
 
-      let iconHtml = '';
+      let innerIcon = '';
       if (link.icon) {
-        iconHtml = `<span style="font-size:16px;line-height:1;flex-shrink:0">${escHtml(link.icon)}</span>`;
+        innerIcon = `<span style="font-size:17px;line-height:1">${escHtml(link.icon)}</span>`;
       } else {
         const fav = faviconUrl(link.url);
-        if (fav) iconHtml = `<img class="card-favicon" src="${fav}" alt="" onerror="this.style.display='none'">`;
+        if (fav) innerIcon = `<img src="${fav}" alt="" onerror="this.style.display='none'">`;
       }
       return `
-        <li class="card">
+        <li class="card" style="animation-delay:${animIdx * 35}ms">
           ${editActions}
           <div class="card-title">
-            ${iconHtml}
+            <div class="card-icon-chip">${innerIcon}</div>
             <h3><a href="${escHtml(link.url)}" target="_blank" rel="noopener noreferrer">${escHtml(link.name)}</a></h3>
           </div>
           ${link.description ? `<p class="description">${escHtml(link.description)}</p>` : ''}
@@ -962,6 +968,24 @@
     document.getElementById('feedback-dialog').addEventListener('keydown', e => {
       if (e.key === 'Escape') closeFeedbackModal();
     });
+
+    // ── Collection colors ─────────────────────────────────────────────────
+    const COLL_COLORS = [
+      { bg:'rgba(0,120,212,0.1)',   border:'rgba(0,120,212,0.28)',   glow:'rgba(0,120,212,0.08)'   },
+      { bg:'rgba(22,163,74,0.1)',   border:'rgba(22,163,74,0.28)',   glow:'rgba(22,163,74,0.08)'   },
+      { bg:'rgba(124,58,237,0.1)',  border:'rgba(124,58,237,0.28)',  glow:'rgba(124,58,237,0.08)'  },
+      { bg:'rgba(8,145,178,0.1)',   border:'rgba(8,145,178,0.28)',   glow:'rgba(8,145,178,0.08)'   },
+      { bg:'rgba(219,39,119,0.1)',  border:'rgba(219,39,119,0.28)',  glow:'rgba(219,39,119,0.08)'  },
+      { bg:'rgba(101,163,13,0.1)',  border:'rgba(101,163,13,0.28)',  glow:'rgba(101,163,13,0.08)'  },
+      { bg:'rgba(217,119,6,0.1)',   border:'rgba(217,119,6,0.28)',   glow:'rgba(217,119,6,0.08)'   },
+      { bg:'rgba(220,38,38,0.1)',   border:'rgba(220,38,38,0.28)',   glow:'rgba(220,38,38,0.08)'   },
+    ];
+    const PERSONAL_COLOR = { bg:'rgba(217,119,6,0.1)', border:'rgba(217,119,6,0.28)', glow:'rgba(217,119,6,0.08)' };
+    function collColor(section) {
+      if (section.personal) return PERSONAL_COLOR;
+      const idx = allCollections.findIndex(c => c.id === section.id);
+      return COLL_COLORS[(idx < 0 ? 0 : idx) % COLL_COLORS.length];
+    }
 
     // ── Utilities ────────────────────────────────────────────────────────
     function faviconUrl(url) {
