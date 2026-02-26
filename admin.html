@@ -604,7 +604,8 @@
     function renderShareDropdown(sharedWith) {
       const sel = document.getElementById('share-user');
       const sharedEmails = sharedWith.map(e => (typeof e === 'string' ? e : e.email).toLowerCase());
-      const available = allUsers.filter(u => !sharedEmails.includes(u.email.toLowerCase()));
+      const available = allUsers.filter(u => !sharedEmails.includes(u.email.toLowerCase()))
+        .sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email));
       sel.innerHTML = available.length === 0
         ? '<option value="">— all users already added —</option>'
         : '<option value="">— select user —</option>' +
