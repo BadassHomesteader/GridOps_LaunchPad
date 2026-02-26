@@ -79,6 +79,19 @@
     .badge.active { color: var(--green); background: var(--green-dim); }
 
     .toast { position: fixed; bottom: 20px; right: 20px; background: var(--text); color: white; padding: 10px 16px; border-radius: 6px; font-size: 12px; font-weight: 500; z-index: 999; display: none; }
+
+    .data-table tbody tr { cursor: pointer; }
+    .data-table tbody tr:hover td { background: var(--row-hover); }
+
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; display: none; align-items: center; justify-content: center; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    .modal-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+    .modal-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+    .modal-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-dim); }
+    .modal-input { padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--font-sans); font-size: 13px; color: var(--text); background: var(--surface); }
+    .modal-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
   </style>
 </head>
 <body>
@@ -142,6 +155,32 @@
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <div class="modal-backdrop" id="edit-modal">
+    <div class="modal">
+      <div class="modal-title">Edit User</div>
+      <div class="modal-field">
+        <label class="modal-label">Email</label>
+        <input class="modal-input" id="edit-email" type="text" readonly style="background:var(--surface2);color:var(--text-dim)">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Name</label>
+        <input class="modal-input" id="edit-name" type="text" placeholder="Full name">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Role</label>
+        <select class="modal-input" id="edit-role">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+          <option value="viewer">Viewer</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="tb-btn" onclick="closeEditModal()">Cancel</button>
+        <button class="tb-btn primary" onclick="saveEditModal()">Save</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     const MSAL_CONFIG = {
@@ -216,7 +255,7 @@
       tbody.innerHTML = users.map((u, i) => {
         const isActive = u.active !== false;
         return `
-          <tr>
+          <tr ondblclick="openEditModal('${escHtml(u.email)}')" title="Double-click to edit">
             <td style="font-family:var(--font-mono);font-size:12px">${escHtml(u.email)}</td>
             <td>${escHtml(u.name || '')}</td>
             <td>
@@ -306,6 +345,44 @@
       clearTimeout(el._t);
       el._t = setTimeout(() => { el.style.display = 'none'; }, 2000);
     }
+
+    function openEditModal(email) {
+      const u = users.find(u => u.email === email);
+      if (!u) return;
+      document.getElementById('edit-email').value = u.email;
+      document.getElementById('edit-name').value = u.name || '';
+      document.getElementById('edit-role').value = u.role || 'user';
+      document.getElementById('edit-modal').classList.add('open');
+      document.getElementById('edit-name').focus();
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-modal').classList.remove('open');
+    }
+
+    async function saveEditModal() {
+      const email = document.getElementById('edit-email').value;
+      const name = document.getElementById('edit-name').value.trim();
+      const role = document.getElementById('edit-role').value;
+      try {
+        const data = await apiPut('/users', { email, name, role, etag: currentEtag });
+        users = data.users;
+        await loadUsers();
+        closeEditModal();
+        toast('User updated');
+      } catch (err) {
+        if (err.message.includes('last admin') || err.message.includes('last active admin')) alert(err.message);
+        else { await loadUsers(); alert('Error: ' + err.message); }
+      }
+    }
+
+    document.getElementById('edit-modal').addEventListener('click', e => {
+      if (e.target === document.getElementById('edit-modal')) closeEditModal();
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeEditModal();
+    });
 
     function escHtml(str) {
       if (!str) return '';
