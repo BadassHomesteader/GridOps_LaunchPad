@@ -727,9 +727,11 @@
         sections.push({ id: '__personal__', name: 'My Links', icon: '⭐', links: filteredPersonal, personal: true });
       }
 
-      // Shared collections
+      // Shared collections — respect nav order when showing all
+      const navOrder = getNavOrder();
+      const orderedCollections = [...allCollections].sort((a, b) => navOrder.indexOf(a.id) - navOrder.indexOf(b.id));
       const collectionsToShow = activeFilter === 'all'
-        ? allCollections
+        ? orderedCollections
         : activeFilter === '__personal__'
           ? []
           : allCollections.filter(c => c.id === activeFilter);
