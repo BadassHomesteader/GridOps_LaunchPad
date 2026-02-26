@@ -1,6 +1,6 @@
 const { app } = require('@azure/functions');
 const { checkAuthorization } = require('../middleware/auth');
-const { readJSONWithETag, writeJSONWithETag, CONTAINER } = require('../storage/blob');
+const { readJSONWithETag, writeJSONWithETag, writeJSON, CONTAINER } = require('../storage/blob');
 
 const USERS_PATH = '_config/allowed-users.json';
 
@@ -47,11 +47,10 @@ async function addUser(request, context) {
     const { email, name, role, etag } = body;
 
     if (!email) return { status: 400, jsonBody: { error: 'email is required' } };
-    if (!etag) return { status: 400, jsonBody: { error: 'etag is required for concurrency control' } };
     if (!email.includes('@')) return { status: 400, jsonBody: { error: 'Invalid email format' } };
 
-    const { data } = await readJSONWithETag(CONTAINER, USERS_PATH);
-    if (!data) return { status: 404, jsonBody: { error: 'Users config not found' } };
+    const { data: existing, etag: currentEtag } = await readJSONWithETag(CONTAINER, USERS_PATH);
+    const data = existing || { allowedUsers: [] };
 
     const normalizedEmail = email.toLowerCase();
     if (data.allowedUsers.find(u => u.email.toLowerCase() === normalizedEmail)) {
@@ -65,9 +64,13 @@ async function addUser(request, context) {
         active: true
     });
 
-    const result = await writeJSONWithETag(CONTAINER, USERS_PATH, data, etag);
-    if (!result.success) {
-        return { status: 409, jsonBody: { error: 'User list was modified by another admin — refresh and try again', conflict: true } };
+    if (currentEtag) {
+        const result = await writeJSONWithETag(CONTAINER, USERS_PATH, data, etag || currentEtag);
+        if (!result.success) {
+            return { status: 409, jsonBody: { error: 'User list was modified by another admin — refresh and try again', conflict: true } };
+        }
+    } else {
+        await writeJSON(CONTAINER, USERS_PATH, data);
     }
 
     context.log(`[users] Added: ${normalizedEmail}`);
