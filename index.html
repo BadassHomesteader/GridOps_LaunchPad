@@ -220,7 +220,9 @@
     }
     .card:hover { transform: translateY(-3px); border-color: rgba(0,120,212,0.25); box-shadow: var(--shadow-card-hover), 0 0 24px rgba(0,120,212,0.07); }
     .card.focused { transform: translateY(-3px); border-color: var(--color-accent); box-shadow: var(--shadow-card-hover), 0 0 0 3px rgba(0,120,212,0.12); }
-    .card h3 { font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.3rem; letter-spacing: -0.01em; }
+    .card-title { display: flex; align-items: center; gap: 7px; margin-bottom: 0.3rem; }
+    .card-favicon { width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0; object-fit: contain; }
+    .card h3 { font-size: 0.9375rem; font-weight: 600; margin-bottom: 0; letter-spacing: -0.01em; }
     .card a { color: var(--color-text); text-decoration: none; }
     .card a::after { content: ''; position: absolute; inset: -1.25rem -1.375rem; }
     .card:hover h3 a { color: var(--color-accent); }
@@ -793,10 +795,14 @@
           <button class="card-action-btn danger" onclick="deletePersonalLink('${escHtml(link.id)}');event.stopPropagation()" title="Delete">✕</button>
         </div>` : '';
 
+      const fav = faviconUrl(link.url);
       return `
         <li class="card">
           ${editActions}
-          <h3><a href="${escHtml(link.url)}" target="_blank" rel="noopener noreferrer">${escHtml(link.name)}</a></h3>
+          <div class="card-title">
+            ${fav ? `<img class="card-favicon" src="${fav}" alt="" onerror="this.style.display='none'">` : ''}
+            <h3><a href="${escHtml(link.url)}" target="_blank" rel="noopener noreferrer">${escHtml(link.name)}</a></h3>
+          </div>
           ${link.description ? `<p class="description">${escHtml(link.description)}</p>` : ''}
           <span class="card-arrow">→</span>
         </li>`;
@@ -952,6 +958,11 @@
     });
 
     // ── Utilities ────────────────────────────────────────────────────────
+    function faviconUrl(url) {
+      try { return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=32`; }
+      catch { return null; }
+    }
+
     function escHtml(str) {
       if (str === null || str === undefined) return '';
       return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

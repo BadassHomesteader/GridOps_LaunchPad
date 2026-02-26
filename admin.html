@@ -393,17 +393,21 @@
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:16px">No links yet. Add one above.</td></tr>';
         return;
       }
-      tbody.innerHTML = links.map((l, i) => `
+      tbody.innerHTML = links.map((l, i) => {
+        let fav = '';
+        try { fav = `<img src="https://www.google.com/s2/favicons?domain=${new URL(l.url).hostname}&sz=32" alt="" width="14" height="14" style="border-radius:2px;vertical-align:middle;margin-right:6px" onerror="this.style.display='none'">`; } catch {}
+        return `
         <tr draggable="true" data-index="${i}">
           <td><span class="drag-handle" title="Drag to reorder">⠿</span></td>
-          <td>${escHtml(l.name)}</td>
+          <td>${fav}${escHtml(l.name)}</td>
           <td><a href="${escHtml(l.url)}" target="_blank" title="${escHtml(l.url)}">${escHtml(l.url.length > 40 ? l.url.substring(0,40) + '…' : l.url)}</a></td>
           <td style="color:var(--text-muted)">${escHtml(l.description || '')}</td>
           <td style="white-space:nowrap">
             <button class="icon-btn" onclick="openEditLinkModal(${i})" title="Edit">✎</button>
             <button class="icon-btn danger" onclick="removeLink(${i})" title="Remove">✕</button>
           </td>
-        </tr>`).join('');
+        </tr>`;
+      }).join('');
       initLinksDragDrop();
     }
 
