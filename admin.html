@@ -181,6 +181,10 @@
           <div class="edit-section-title">Links</div>
           <!-- Add link inline form -->
           <div class="form-row" style="margin-bottom:12px">
+            <div class="form-group fixed" style="width:52px">
+              <label class="form-label">Icon</label>
+              <input class="form-input" id="new-link-icon" type="text" maxlength="2" style="text-align:center;font-size:18px" placeholder="🔗">
+            </div>
             <div class="form-group">
               <label class="form-label">Name</label>
               <input class="form-input" id="new-link-name" type="text" placeholder="Link name">
@@ -258,9 +262,15 @@
     <div class="modal">
       <div class="modal-title">Edit Link</div>
       <input type="hidden" id="edit-link-id">
-      <div class="form-group" style="margin-bottom:10px">
-        <label class="form-label">Name</label>
-        <input class="form-input" id="edit-link-name" type="text">
+      <div class="form-row" style="margin-bottom:10px">
+        <div class="form-group fixed" style="width:52px">
+          <label class="form-label">Icon</label>
+          <input class="form-input" id="edit-link-icon" type="text" maxlength="2" style="text-align:center;font-size:18px" placeholder="🔗">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input class="form-input" id="edit-link-name" type="text">
+        </div>
       </div>
       <div class="form-group" style="margin-bottom:10px">
         <label class="form-label">URL</label>
@@ -394,12 +404,16 @@
         return;
       }
       tbody.innerHTML = links.map((l, i) => {
-        let fav = '';
-        try { fav = `<img src="https://www.google.com/s2/favicons?domain=${new URL(l.url).hostname}&sz=32" alt="" width="14" height="14" style="border-radius:2px;vertical-align:middle;margin-right:6px" onerror="this.style.display='none'">`; } catch {}
+        let iconHtml = '';
+        if (l.icon) {
+          iconHtml = `<span style="font-size:14px;margin-right:6px;vertical-align:middle">${escHtml(l.icon)}</span>`;
+        } else {
+          try { iconHtml = `<img src="https://www.google.com/s2/favicons?domain=${new URL(l.url).hostname}&sz=32" alt="" width="14" height="14" style="border-radius:2px;vertical-align:middle;margin-right:6px" onerror="this.style.display='none'">`; } catch {}
+        }
         return `
         <tr draggable="true" data-index="${i}">
           <td><span class="drag-handle" title="Drag to reorder">⠿</span></td>
-          <td>${fav}${escHtml(l.name)}</td>
+          <td>${iconHtml}${escHtml(l.name)}</td>
           <td><a href="${escHtml(l.url)}" target="_blank" title="${escHtml(l.url)}">${escHtml(l.url.length > 40 ? l.url.substring(0,40) + '…' : l.url)}</a></td>
           <td style="color:var(--text-muted)">${escHtml(l.description || '')}</td>
           <td style="white-space:nowrap">
@@ -486,10 +500,12 @@
       const description = document.getElementById('new-link-desc').value.trim();
       if (!name || !url) { alert('Name and URL are required'); return; }
 
-      const links = [...(col.links || []), { id: `lnk-${Date.now()}`, name, url, description }];
+      const icon = document.getElementById('new-link-icon').value.trim();
+      const links = [...(col.links || []), { id: `lnk-${Date.now()}`, name, url, description, icon }];
       try {
         const updated = await apiPut(`/collections/${col.id}`, { links });
         mergeCollection(updated);
+        document.getElementById('new-link-icon').value = '';
         document.getElementById('new-link-name').value = '';
         document.getElementById('new-link-url').value = '';
         document.getElementById('new-link-desc').value = '';
@@ -516,6 +532,7 @@
       const link = (col.links || [])[index];
       if (!link) return;
       document.getElementById('edit-link-id').value = index;
+      document.getElementById('edit-link-icon').value = link.icon || '';
       document.getElementById('edit-link-name').value = link.name;
       document.getElementById('edit-link-url').value = link.url;
       document.getElementById('edit-link-desc').value = link.description || '';
@@ -531,6 +548,7 @@
       const links = [...(col.links || [])];
       links[index] = {
         ...links[index],
+        icon: document.getElementById('edit-link-icon').value.trim(),
         name: document.getElementById('edit-link-name').value.trim(),
         url: document.getElementById('edit-link-url').value.trim(),
         description: document.getElementById('edit-link-desc').value.trim()

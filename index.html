@@ -795,12 +795,18 @@
           <button class="card-action-btn danger" onclick="deletePersonalLink('${escHtml(link.id)}');event.stopPropagation()" title="Delete">✕</button>
         </div>` : '';
 
-      const fav = faviconUrl(link.url);
+      let iconHtml = '';
+      if (link.icon) {
+        iconHtml = `<span style="font-size:16px;line-height:1;flex-shrink:0">${escHtml(link.icon)}</span>`;
+      } else {
+        const fav = faviconUrl(link.url);
+        if (fav) iconHtml = `<img class="card-favicon" src="${fav}" alt="" onerror="this.style.display='none'">`;
+      }
       return `
         <li class="card">
           ${editActions}
           <div class="card-title">
-            ${fav ? `<img class="card-favicon" src="${fav}" alt="" onerror="this.style.display='none'">` : ''}
+            ${iconHtml}
             <h3><a href="${escHtml(link.url)}" target="_blank" rel="noopener noreferrer">${escHtml(link.name)}</a></h3>
           </div>
           ${link.description ? `<p class="description">${escHtml(link.description)}</p>` : ''}
