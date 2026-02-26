@@ -203,8 +203,10 @@
           <div class="edit-section-title">Sharing — who can see this collection</div>
           <div class="form-row" style="margin-bottom:12px">
             <div class="form-group">
-              <label class="form-label">Add User Email</label>
-              <input class="form-input" id="share-email" type="email" placeholder="user@example.com">
+              <label class="form-label">Add User</label>
+              <select class="form-input" id="share-user">
+                <option value="">— select user —</option>
+              </select>
             </div>
             <div class="form-group fixed" style="width:80px">
               <label class="form-label">&nbsp;</label>
@@ -306,6 +308,7 @@
     // ── State ────────────────────────────────────────────────────────────
     let collections = [];
     let selectedId = null;
+    let allUsers = [];
 
     function selectedCollection() { return collections.find(c => c.id === selectedId); }
 
@@ -325,6 +328,7 @@
             <span class="user-email">${me.email}</span>
             <button class="signout-btn" onclick="signOut()">Sign out</button>
           </div>`;
+        try { const ud = await apiGet('/users'); allUsers = (ud.users || []).filter(u => u.active !== false); } catch {}
         await loadCollections();
         document.getElementById('loading').style.display = 'none';
         document.getElementById('main-ui').style.display = 'flex';
@@ -374,6 +378,7 @@
       document.getElementById('edit-description').value = col.description || '';
       renderLinksTable(col.links || []);
       renderSharingTable(col.sharedWith || []);
+      renderShareDropdown(col.sharedWith || []);
     }
 
     function renderLinksTable(links) {
@@ -490,21 +495,28 @@
     }
 
     // ── Sharing ──────────────────────────────────────────────────────────
+    function renderShareDropdown(sharedWith) {
+      const sel = document.getElementById('share-user');
+      const sharedEmails = sharedWith.map(e => (typeof e === 'string' ? e : e.email).toLowerCase());
+      const available = allUsers.filter(u => !sharedEmails.includes(u.email.toLowerCase()));
+      sel.innerHTML = available.length === 0
+        ? '<option value="">— all users already added —</option>'
+        : '<option value="">— select user —</option>' +
+          available.map(u => `<option value="${escHtml(u.email)}">${escHtml(u.name || u.email)} (${escHtml(u.email)})</option>`).join('');
+    }
+
     async function addShare() {
       const col = selectedCollection();
       if (!col) return;
-      const email = document.getElementById('share-email').value.trim().toLowerCase();
-      if (!email || !email.includes('@')) { alert('Valid email required'); return; }
+      const email = document.getElementById('share-user').value.trim().toLowerCase();
+      if (!email) { alert('Please select a user'); return; }
       const sharedWith = [...(col.sharedWith || [])];
-      if (sharedWith.some(e => (typeof e === 'string' ? e : e.email).toLowerCase() === email)) {
-        alert('Already shared with this user'); return;
-      }
       sharedWith.push(email);
       try {
         const updated = await apiPut(`/collections/${col.id}/sharing`, { sharedWith });
         mergeCollection(updated);
         renderSharingTable(updated.sharedWith);
-        document.getElementById('share-email').value = '';
+        renderShareDropdown(updated.sharedWith);
         toast('Shared');
       } catch (err) { alert('Error: ' + err.message); }
     }
@@ -517,6 +529,7 @@
         const updated = await apiPut(`/collections/${col.id}/sharing`, { sharedWith });
         mergeCollection(updated);
         renderSharingTable(updated.sharedWith);
+        renderShareDropdown(updated.sharedWith);
         toast('Removed');
       } catch (err) { alert('Error: ' + err.message); }
     }
