@@ -296,9 +296,18 @@
     .btn.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,120,212,0.3); }
 
     /* ── Feedback modal ── */
-    .feedback-type-row { display: flex; gap: 0.5rem; margin-bottom: 0.25rem; }
-    .type-chip { padding: 0.3125rem 0.75rem; border-radius: 100px; border: 1px solid var(--color-border); background: var(--color-surface); font: inherit; font-size: 0.8125rem; cursor: pointer; transition: all var(--transition-fast); }
-    .type-chip.active { background: var(--color-accent-glow); border-color: rgba(0,120,212,0.3); color: var(--color-accent); font-weight: 600; }
+    dialog#feedback-dialog { width: 90%; max-width: 560px; border-radius: var(--radius-xl); border: 1px solid var(--color-border); padding: 0; box-shadow: 0 25px 50px rgba(0,0,0,0.25); position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); margin: 0; background: var(--color-bg-elevated); }
+    dialog#feedback-dialog::backdrop { background: rgba(15,23,42,0.45); backdrop-filter: blur(6px); }
+    .fb-header { display: flex; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--color-border); background: var(--color-surface); border-radius: var(--radius-xl) var(--radius-xl) 0 0; }
+    .fb-header h3 { font-size: 1rem; font-weight: 600; margin: 0; flex: 1; }
+    .fb-body { padding: 1.25rem 1.5rem; max-height: 65vh; overflow-y: auto; }
+    .fb-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .fb-group { margin-bottom: 0.875rem; }
+    .fb-label { display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-secondary); margin-bottom: 0.3rem; }
+    .fb-input { width: 100%; padding: 0.5625rem 0.75rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-sm); font: inherit; font-size: 0.875rem; color: var(--color-text); box-sizing: border-box; }
+    .fb-input:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px var(--color-accent-glow); }
+    textarea.fb-input { min-height: 100px; resize: vertical; }
+    .fb-footer { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; padding: 0.875rem 1.5rem; border-top: 1px solid var(--color-border); background: var(--color-surface); border-radius: 0 0 var(--radius-xl) var(--radius-xl); }
 
     @media (max-width: 768px) {
       :root { --sidebar-width: 100%; }
@@ -424,28 +433,55 @@
     </div>
   </div>
 
-  <!-- Feedback modal -->
-  <div class="modal-overlay" id="feedback-modal">
-    <div class="modal">
-      <div class="modal-title">Send Feedback</div>
-      <div class="form-group">
-        <label class="form-label">Type</label>
-        <div class="feedback-type-row">
-          <button class="type-chip active" data-type="general" onclick="selectFeedbackType(this)">General</button>
-          <button class="type-chip" data-type="bug" onclick="selectFeedbackType(this)">Bug</button>
-          <button class="type-chip" data-type="request" onclick="selectFeedbackType(this)">Request</button>
+  <!-- Feedback dialog -->
+  <dialog id="feedback-dialog">
+    <div class="fb-header"><h3>Send Feedback</h3></div>
+    <div class="fb-body">
+      <div class="fb-group">
+        <label class="fb-label">Title *</label>
+        <input class="fb-input" id="fb-title" type="text" placeholder="Brief summary..." required>
+      </div>
+      <div class="fb-row">
+        <div class="fb-group">
+          <label class="fb-label">Type</label>
+          <select class="fb-input" id="fb-type">
+            <option value="general">General</option>
+            <option value="bug">Bug</option>
+            <option value="feature">Feature Request</option>
+            <option value="question">Question</option>
+          </select>
+        </div>
+        <div class="fb-group">
+          <label class="fb-label">Priority</label>
+          <select class="fb-input" id="fb-priority">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Message</label>
-        <textarea class="form-input" id="feedback-message" rows="4" placeholder="What's on your mind?" style="resize:vertical"></textarea>
+      <div class="fb-group">
+        <label class="fb-label">Area</label>
+        <select class="fb-input" id="fb-area">
+          <option value="">Select area...</option>
+          <option value="Links">Links</option>
+          <option value="Collections">Collections</option>
+          <option value="Navigation">Navigation</option>
+          <option value="My Links">My Links</option>
+          <option value="Other">Other</option>
+        </select>
       </div>
-      <div class="modal-actions">
-        <button class="btn" onclick="closeFeedbackModal()">Cancel</button>
-        <button class="btn primary" onclick="submitFeedback()">Send</button>
+      <div class="fb-group">
+        <label class="fb-label">Description</label>
+        <textarea class="fb-input" id="fb-description" placeholder="Provide details..."></textarea>
       </div>
     </div>
-  </div>
+    <div class="fb-footer">
+      <button class="btn" onclick="closeFeedbackModal()">Cancel</button>
+      <button class="btn primary" onclick="submitFeedback()">Send</button>
+    </div>
+  </dialog>
 
   <script>
     // ── MSAL Configuration ──────────────────────────────────────────────
@@ -862,30 +898,40 @@
     let feedbackType = 'general';
 
     function openFeedbackModal() {
-      document.getElementById('feedback-message').value = '';
-      document.getElementById('feedback-modal').classList.add('active');
-      setTimeout(() => document.getElementById('feedback-message').focus(), 80);
+      const dlg = document.getElementById('feedback-dialog');
+      document.getElementById('fb-title').value = '';
+      document.getElementById('fb-type').value = 'general';
+      document.getElementById('fb-priority').value = 'medium';
+      document.getElementById('fb-area').value = '';
+      document.getElementById('fb-description').value = '';
+      dlg.showModal();
+      setTimeout(() => document.getElementById('fb-title').focus(), 80);
+      dlg.onclick = e => { if (e.target === dlg) dlg.close(); };
     }
 
     function closeFeedbackModal() {
-      document.getElementById('feedback-modal').classList.remove('active');
-    }
-
-    function selectFeedbackType(btn) {
-      document.querySelectorAll('.type-chip').forEach(c => c.classList.remove('active'));
-      btn.classList.add('active');
-      feedbackType = btn.dataset.type;
+      document.getElementById('feedback-dialog').close();
     }
 
     async function submitFeedback() {
-      const message = document.getElementById('feedback-message').value.trim();
-      if (!message) { document.getElementById('feedback-message').focus(); return; }
+      const title = document.getElementById('fb-title').value.trim();
+      if (!title) { document.getElementById('fb-title').focus(); return; }
+      const btn = document.querySelector('#feedback-dialog .btn.primary');
+      btn.disabled = true; btn.textContent = 'Sending...';
       try {
-        await apiPost('/feedback', { message, type: feedbackType });
+        await apiPost('/feedback', {
+          title,
+          type: document.getElementById('fb-type').value,
+          priority: document.getElementById('fb-priority').value,
+          area: document.getElementById('fb-area').value,
+          description: document.getElementById('fb-description').value.trim()
+        });
         closeFeedbackModal();
         alert('Thanks for your feedback!');
       } catch (err) {
         alert('Failed to submit: ' + err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Send';
       }
     }
 

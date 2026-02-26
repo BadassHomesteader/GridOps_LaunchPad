@@ -42,15 +42,19 @@ app.http('createFeedback', {
         }
 
         const body = await request.json();
-        if (!body.message) {
-            return { status: 400, jsonBody: { error: 'message is required' } };
+        if (!body.title && !body.message) {
+            return { status: 400, jsonBody: { error: 'title is required' } };
         }
 
         const item = {
             id: generateId(),
-            message: body.message,
+            title: body.title || body.message,
             type: body.type || 'general',
+            priority: body.priority || 'medium',
+            area: body.area || '',
+            description: body.description || body.message || '',
             status: 'open',
+            assignedTo: '',
             reportedBy: authResult.user.name || authResult.user.email,
             reportedByEmail: authResult.user.email,
             createdAt: new Date().toISOString()
@@ -106,6 +110,9 @@ app.http('updateFeedback', {
 
             if (body.status !== undefined) data.items[idx].status = body.status;
             if (body.note !== undefined) data.items[idx].note = body.note;
+            if (body.assignedTo !== undefined) data.items[idx].assignedTo = body.assignedTo;
+            if (body.priority !== undefined) data.items[idx].priority = body.priority;
+            if (body.area !== undefined) data.items[idx].area = body.area;
             data.items[idx].updatedAt = new Date().toISOString();
 
             const payload = { items: data.items, count: data.items.length, lastUpdated: new Date().toISOString() };
