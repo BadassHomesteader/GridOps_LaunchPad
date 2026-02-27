@@ -98,7 +98,30 @@
       display: flex; flex-direction: column;
       z-index: 100;
       box-shadow: 1px 0 8px rgba(0,0,0,0.03);
+      transition: transform var(--transition-smooth);
     }
+    body.sidebar-collapsed .sidebar { transform: translateX(calc(-1 * var(--sidebar-width))); }
+    body.sidebar-collapsed .content { margin-left: 0; max-width: 100vw; }
+
+    .sidebar-toggle-btn {
+      position: absolute; top: 1.1rem; right: 0.875rem;
+      background: none; border: none; cursor: pointer; padding: 4px 6px;
+      color: var(--color-text-tertiary); border-radius: var(--radius-sm);
+      transition: all var(--transition-fast); display: flex; align-items: center;
+    }
+    .sidebar-toggle-btn:hover { background: var(--color-surface-hover); color: var(--color-text); }
+
+    .sidebar-show-tab {
+      position: fixed; top: 1.125rem; left: 0; z-index: 99;
+      width: 24px; height: 36px;
+      background: var(--color-bg-elevated); border: 1px solid var(--color-border);
+      border-left: none; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      display: none; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 2px 0 8px rgba(0,0,0,0.08);
+      color: var(--color-text-tertiary); transition: all var(--transition-fast);
+    }
+    .sidebar-show-tab:hover { background: var(--color-surface-hover); color: var(--color-text); width: 28px; }
+    body.sidebar-collapsed .sidebar-show-tab { display: flex; }
     .sidebar-header { padding: 1.5rem 1.5rem 1.25rem; border-bottom: 1px solid var(--color-border); }
     .logo { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.125rem; }
     .logo-mark {
@@ -203,7 +226,7 @@
     #admin-links { display: none; }
 
     /* ── Main content ── */
-    .content { flex: 1; margin-left: var(--sidebar-width); padding: 2.5rem 3rem; max-width: calc(100vw - var(--sidebar-width)); }
+    .content { flex: 1; margin-left: var(--sidebar-width); padding: 2.5rem 3rem; max-width: calc(100vw - var(--sidebar-width)); transition: margin-left var(--transition-smooth), max-width var(--transition-smooth); }
     .content-header { margin-bottom: 2.25rem; }
     .greeting { font-size: 0.8125rem; color: var(--color-text-tertiary); margin-bottom: 0.2rem; font-weight: 500; }
     .page-title { font-size: 1.875rem; font-weight: 700; letter-spacing: -0.03em; }
@@ -369,12 +392,18 @@
       <strong>Error loading LaunchPad:</strong> <span id="app-error-msg"></span>
     </div>
     <div class="layout">
+      <button class="sidebar-show-tab" onclick="toggleSidebar()" title="Show sidebar">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
       <nav class="sidebar">
-        <div class="sidebar-header">
+        <div class="sidebar-header" style="position:relative">
           <div class="logo">
             <div class="logo-mark">🚀</div>
             <div class="logo-text"><span>GridOps</span> LaunchPad</div>
           </div>
+          <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Hide sidebar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
           <div class="search-box">
             <input type="text" class="search-input" id="search-input" placeholder="Search links...">
             <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -920,6 +949,15 @@
         personalLinks = d.links || [];
         renderContent();
       }
+    }
+
+    // ── Sidebar toggle ────────────────────────────────────────────────────
+    function toggleSidebar() {
+      const collapsed = document.body.classList.toggle('sidebar-collapsed');
+      localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
+    }
+    if (localStorage.getItem('sidebarCollapsed') === '1') {
+      document.body.classList.add('sidebar-collapsed');
     }
 
     // ── User menu ────────────────────────────────────────────────────────
