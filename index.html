@@ -681,13 +681,25 @@
           <span class="nav-icon">⭐</span><span>My Links</span>
           <span class="nav-count">${personalLinks.length}</span>
         </button></li>`,
-        ...orderedCollections.map(c => `
-          <li class="nav-col-item" draggable="true" data-col-id="${escHtml(c.id)}">
-            <button class="nav-item" data-filter="${escHtml(c.id)}">
-              <span class="nav-icon">${c.icon || '🔗'}</span><span>${escHtml(c.name)}</span>
-              <span class="nav-count">${(c.links || []).length}</span>
-            </button>
-          </li>`)
+        ...(() => {
+          const grouped = [];
+          let lastGroup = undefined;
+          orderedCollections.forEach(c => {
+            const g = c.group || '';
+            if (g !== lastGroup) {
+              if (g) grouped.push(`<li><div class="nav-label" style="padding-top:0.75rem">${escHtml(g)}</div></li>`);
+              lastGroup = g;
+            }
+            grouped.push(`
+              <li class="nav-col-item" draggable="true" data-col-id="${escHtml(c.id)}">
+                <button class="nav-item" data-filter="${escHtml(c.id)}">
+                  <span class="nav-icon">${c.icon || '🔗'}</span><span>${escHtml(c.name)}</span>
+                  <span class="nav-count">${(c.links || []).length}</span>
+                </button>
+              </li>`);
+          });
+          return grouped;
+        })()
       ];
 
       nav.innerHTML = items.join('');

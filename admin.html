@@ -187,6 +187,10 @@
             <label class="form-label">Description</label>
             <input class="form-input" id="edit-description" type="text" placeholder="Short description (optional)">
           </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Group</label>
+            <input class="form-input" id="edit-group" type="text" placeholder="e.g. Field Operations (optional)">
+          </div>
           <div style="display:flex;gap:8px">
             <button class="tb-btn primary" onclick="saveMetadata()">Save Details</button>
             <button class="tb-btn danger" onclick="deleteCollection()">Delete Collection</button>
@@ -423,6 +427,7 @@
       document.getElementById('edit-icon').value = col.icon || '🔗';
       document.getElementById('edit-name').value = col.name;
       document.getElementById('edit-description').value = col.description || '';
+      document.getElementById('edit-group').value = col.group || '';
       renderLinksTable(col.links || []);
       renderSharingTable(col.sharedWith || []);
       renderShareDropdown(col.sharedWith || []);
@@ -520,7 +525,8 @@
         const updated = await apiPut(`/collections/${col.id}`, {
           name: document.getElementById('edit-name').value.trim(),
           icon: document.getElementById('edit-icon').value.trim() || '🔗',
-          description: document.getElementById('edit-description').value.trim()
+          description: document.getElementById('edit-description').value.trim(),
+          group: document.getElementById('edit-group').value.trim()
         });
         mergeCollection(updated);
         toast('Saved');
