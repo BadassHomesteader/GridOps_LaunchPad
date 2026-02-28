@@ -187,10 +187,6 @@
             <label class="form-label">Description</label>
             <input class="form-input" id="edit-description" type="text" placeholder="Short description (optional)">
           </div>
-          <div class="form-group" style="margin-bottom:12px">
-            <label class="form-label">Group</label>
-            <input class="form-input" id="edit-group" type="text" placeholder="e.g. Field Operations (optional)">
-          </div>
           <div style="display:flex;gap:8px">
             <button class="tb-btn primary" onclick="saveMetadata()">Save Details</button>
             <button class="tb-btn danger" onclick="deleteCollection()">Delete Collection</button>
@@ -221,13 +217,17 @@
               <label class="form-label">Description</label>
               <input class="form-input" id="new-link-desc" type="text" placeholder="(optional)">
             </div>
+            <div class="form-group">
+              <label class="form-label">Group</label>
+              <input class="form-input" id="new-link-group" type="text" placeholder="e.g. SharePoint (optional)">
+            </div>
             <div class="form-group fixed" style="width:64px">
               <label class="form-label">&nbsp;</label>
               <button class="tb-btn primary" onclick="addLink()" style="height:100%">Add</button>
             </div>
           </div>
           <table class="links-table" id="links-table">
-            <thead><tr><th style="width:20px"></th><th>Name</th><th>URL</th><th>Description</th><th></th></tr></thead>
+            <thead><tr><th style="width:20px"></th><th>Name</th><th>URL</th><th>Description</th><th>Group</th><th></th></tr></thead>
             <tbody id="links-tbody"></tbody>
           </table>
         </div>
@@ -303,9 +303,13 @@
         <label class="form-label">URL</label>
         <input class="form-input" id="edit-link-url" type="url">
       </div>
-      <div class="form-group" style="margin-bottom:4px">
+      <div class="form-group" style="margin-bottom:10px">
         <label class="form-label">Description</label>
         <input class="form-input" id="edit-link-desc" type="text">
+      </div>
+      <div class="form-group" style="margin-bottom:4px">
+        <label class="form-label">Group</label>
+        <input class="form-input" id="edit-link-group" type="text" placeholder="e.g. SharePoint (optional)">
       </div>
       <div class="modal-actions">
         <button class="btn" onclick="closeEditLinkModal()">Cancel</button>
@@ -427,7 +431,6 @@
       document.getElementById('edit-icon').value = col.icon || '🔗';
       document.getElementById('edit-name').value = col.name;
       document.getElementById('edit-description').value = col.description || '';
-      document.getElementById('edit-group').value = col.group || '';
       renderLinksTable(col.links || []);
       renderSharingTable(col.sharedWith || []);
       renderShareDropdown(col.sharedWith || []);
@@ -454,6 +457,7 @@
           <td>${iconHtml}${escHtml(l.name)}</td>
           <td><a href="${escHtml(l.url)}" target="_blank" title="${escHtml(l.url)}">${escHtml(l.url.length > 40 ? l.url.substring(0,40) + '…' : l.url)}</a></td>
           <td style="color:var(--text-muted)">${escHtml(l.description || '')}</td>
+          <td style="color:var(--text-muted);font-style:${l.group ? 'normal' : 'italic'}">${escHtml(l.group || '—')}</td>
           <td style="white-space:nowrap">
             <button class="icon-btn" onclick="openEditLinkModal(${i})" title="Edit">✎</button>
             <button class="icon-btn danger" onclick="removeLink(${i})" title="Remove">✕</button>
@@ -525,8 +529,7 @@
         const updated = await apiPut(`/collections/${col.id}`, {
           name: document.getElementById('edit-name').value.trim(),
           icon: document.getElementById('edit-icon').value.trim() || '🔗',
-          description: document.getElementById('edit-description').value.trim(),
-          group: document.getElementById('edit-group').value.trim()
+          description: document.getElementById('edit-description').value.trim()
         });
         mergeCollection(updated);
         toast('Saved');
@@ -543,7 +546,8 @@
       if (!name || !url) { alert('Name and URL are required'); return; }
 
       const icon = document.getElementById('new-link-icon').value.trim();
-      const links = [...(col.links || []), { id: `lnk-${Date.now()}`, name, url, description, icon }];
+      const group = document.getElementById('new-link-group').value.trim();
+      const links = [...(col.links || []), { id: `lnk-${Date.now()}`, name, url, description, icon, group }];
       try {
         const updated = await apiPut(`/collections/${col.id}`, { links });
         mergeCollection(updated);
@@ -552,6 +556,7 @@
         document.getElementById('new-link-name').value = '';
         document.getElementById('new-link-url').value = '';
         document.getElementById('new-link-desc').value = '';
+        document.getElementById('new-link-group').value = '';
         renderLinksTable(updated.links);
         toast('Link added');
       } catch (err) { alert('Error: ' + err.message); }
@@ -580,6 +585,7 @@
       document.getElementById('edit-link-name').value = link.name;
       document.getElementById('edit-link-url').value = link.url;
       document.getElementById('edit-link-desc').value = link.description || '';
+      document.getElementById('edit-link-group').value = link.group || '';
       document.getElementById('edit-link-modal').classList.add('active');
     }
 
@@ -595,7 +601,8 @@
         icon: document.getElementById('edit-link-icon').value.trim(),
         name: document.getElementById('edit-link-name').value.trim(),
         url: document.getElementById('edit-link-url').value.trim(),
-        description: document.getElementById('edit-link-desc').value.trim()
+        description: document.getElementById('edit-link-desc').value.trim(),
+        group: document.getElementById('edit-link-group').value.trim()
       };
       try {
         const updated = await apiPut(`/collections/${col.id}`, { links });

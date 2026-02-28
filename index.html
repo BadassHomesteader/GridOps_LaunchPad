@@ -681,25 +681,13 @@
           <span class="nav-icon">⭐</span><span>My Links</span>
           <span class="nav-count">${personalLinks.length}</span>
         </button></li>`,
-        ...(() => {
-          const grouped = [];
-          let lastGroup = undefined;
-          orderedCollections.forEach(c => {
-            const g = c.group || '';
-            if (g !== lastGroup) {
-              if (g) grouped.push(`<li><div class="nav-label" style="padding-top:0.75rem">${escHtml(g)}</div></li>`);
-              lastGroup = g;
-            }
-            grouped.push(`
-              <li class="nav-col-item" draggable="true" data-col-id="${escHtml(c.id)}">
-                <button class="nav-item" data-filter="${escHtml(c.id)}">
-                  <span class="nav-icon">${c.icon || '🔗'}</span><span>${escHtml(c.name)}</span>
-                  <span class="nav-count">${(c.links || []).length}</span>
-                </button>
-              </li>`);
-          });
-          return grouped;
-        })()
+        ...orderedCollections.map(c => `
+          <li class="nav-col-item" draggable="true" data-col-id="${escHtml(c.id)}">
+            <button class="nav-item" data-filter="${escHtml(c.id)}">
+              <span class="nav-icon">${c.icon || '🔗'}</span><span>${escHtml(c.name)}</span>
+              <span class="nav-count">${(c.links || []).length}</span>
+            </button>
+          </li>`)
       ];
 
       nav.innerHTML = items.join('');
@@ -823,7 +811,26 @@
         ? `<button class="section-add-btn" onclick="openAddLinkModal()">+ Add</button>`
         : '';
 
-      const cardsHtml = links.map((link, idx) => renderCard(link, personal, idx)).join('');
+      // Group links by their group field
+      const hasGroups = !personal && links.some(l => l.group);
+      let cardsHtml = '';
+      if (hasGroups) {
+        const groups = [];
+        let lastG = undefined;
+        links.forEach((link, idx) => {
+          const g = link.group || '';
+          if (g !== lastG) {
+            if (groups.length > 0) cardsHtml += '</ul>';
+            cardsHtml += `<li style="grid-column:1/-1;list-style:none"><div style="font-size:0.625rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--color-text-tertiary);padding:0.75rem 0 0.375rem;border-top:1px solid var(--color-border);margin-top:${groups.length ? '0.5rem' : '0'}">${escHtml(g || 'Other')}</div></li><ul class="cards-container" style="margin-bottom:0">`;
+            groups.push(g);
+            lastG = g;
+          }
+          cardsHtml += renderCard(link, personal, idx);
+        });
+        if (groups.length > 0) cardsHtml += '</ul>';
+      } else {
+        cardsHtml = links.map((link, idx) => renderCard(link, personal, idx)).join('');
+      }
 
       return `
         <section class="section" data-id="${escHtml(id)}" style="${colorVars}">
@@ -833,9 +840,10 @@
             <span class="section-count">${links.length}</span>
             ${addBtn}
           </div>
-          <ul class="cards-container">
-            ${cardsHtml || `<li style="grid-column:1/-1"><div class="empty-state" style="padding:1.5rem"><div class="empty-state-icon" style="font-size:1.75rem">🔗</div><p class="empty-state-text">${personal ? 'No personal links yet. Click + Add to get started.' : 'No links in this category yet.'}</p></div></li>`}
-          </ul>
+          ${hasGroups
+            ? `<div>${cardsHtml || ''}</div>`
+            : `<ul class="cards-container">${cardsHtml || `<li style="grid-column:1/-1"><div class="empty-state" style="padding:1.5rem"><div class="empty-state-icon" style="font-size:1.75rem">🔗</div><p class="empty-state-text">${personal ? 'No personal links yet. Click + Add to get started.' : 'No links in this category yet.'}</p></div></li>`}</ul>`
+          }
         </section>`;
     }
 
