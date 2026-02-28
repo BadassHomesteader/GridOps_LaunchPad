@@ -168,6 +168,23 @@
 
     <!-- Right: edit panel -->
     <div class="col-edit" id="col-edit">
+      <!-- Announcements — always visible -->
+      <div class="edit-section" id="announcement-section">
+        <div class="edit-section-title">Announcements</div>
+        <div id="announcement-current" style="margin-bottom:10px;display:none"></div>
+        <div class="form-group" style="margin-bottom:8px">
+          <label class="form-label">Title <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+          <input class="form-input" id="ann-title" type="text" placeholder="e.g. Maintenance Notice">
+        </div>
+        <div class="form-group" style="margin-bottom:10px">
+          <label class="form-label">Message *</label>
+          <textarea class="form-input" id="ann-message" rows="3" placeholder="What do you want to announce?" style="resize:vertical"></textarea>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="tb-btn primary" onclick="postAnnouncement()">Post</button>
+          <button class="tb-btn danger" id="ann-clear-btn" onclick="clearAnnouncement()" style="display:none">Clear</button>
+        </div>
+      </div>
       <div class="edit-panel-empty" id="edit-empty">← Select a collection to edit</div>
       <div id="edit-panel" style="display:none">
         <!-- Metadata -->
@@ -385,6 +402,7 @@
           </div>`;
         try { const ud = await apiGet('/users'); allUsers = (ud.users || []).filter(u => u.active !== false); } catch {}
         await loadCollections();
+        loadAnnouncement();
         document.getElementById('loading').style.display = 'none';
         document.getElementById('main-ui').style.display = 'flex';
       } catch (err) {
@@ -519,6 +537,53 @@
           <td style="font-family:var(--font-mono);font-size:12px">${escHtml(email)}</td>
           <td><button class="remove-btn" onclick="removeShare(${i})" title="Remove">✕</button></td></tr>`;
       }).join('');
+    }
+
+    // ── Announcements ────────────────────────────────────────────────────
+    async function loadAnnouncement() {
+      try {
+        const { announcement } = await apiGet('/announcement');
+        renderAnnouncementPanel(announcement);
+      } catch { /* non-critical */ }
+    }
+
+    function renderAnnouncementPanel(ann) {
+      const cur = document.getElementById('announcement-current');
+      const clearBtn = document.getElementById('ann-clear-btn');
+      if (ann) {
+        cur.style.display = 'block';
+        cur.innerHTML = `<div style="background:rgba(0,120,212,0.08);border:1px solid rgba(0,120,212,0.2);border-radius:4px;padding:8px 10px;font-size:12px">
+          <strong>${escHtml(ann.title || 'Active Announcement')}</strong><br>
+          ${escHtml(ann.message)}<br>
+          <span style="color:var(--text-muted)">Posted ${new Date(ann.createdAt).toLocaleString()}</span>
+        </div>`;
+        clearBtn.style.display = '';
+      } else {
+        cur.style.display = 'none';
+        clearBtn.style.display = 'none';
+      }
+    }
+
+    async function postAnnouncement() {
+      const title = document.getElementById('ann-title').value.trim();
+      const message = document.getElementById('ann-message').value.trim();
+      if (!message) { document.getElementById('ann-message').focus(); return; }
+      try {
+        const ann = await apiPut('/announcement', { title, message });
+        renderAnnouncementPanel(ann);
+        document.getElementById('ann-title').value = '';
+        document.getElementById('ann-message').value = '';
+        toast('Announcement posted');
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    async function clearAnnouncement() {
+      if (!confirm('Remove the active announcement?')) return;
+      try {
+        await apiDel('/announcement');
+        renderAnnouncementPanel(null);
+        toast('Announcement cleared');
+      } catch (err) { alert('Error: ' + err.message); }
     }
 
     // ── Metadata save ────────────────────────────────────────────────────
