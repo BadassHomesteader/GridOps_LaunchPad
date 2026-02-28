@@ -9,3 +9,4 @@ require('./functions/collections');
 require('./functions/personal');
 require('./functions/users');
 require('./functions/feedback');
+require('./functions/announcements');
