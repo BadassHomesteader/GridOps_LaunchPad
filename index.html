@@ -391,6 +391,54 @@
       border-radius: 4px; flex-shrink: 0; transition: all var(--transition-fast);
     }
     .announcement-dismiss:hover { background: rgba(0,0,0,0.06); color: var(--color-text); }
+
+    /* ── Global search results ── */
+    .search-results-header {
+      font-size: 0.8125rem; color: var(--color-text-tertiary);
+      margin-bottom: 0.875rem;
+    }
+    .search-results-header strong { color: var(--color-text-secondary); }
+    .search-results { display: flex; flex-direction: column; gap: 0.375rem; }
+    .search-result-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 0.625rem 0.875rem;
+      text-decoration: none; color: inherit;
+      transition: all var(--transition-fast);
+      animation: fadeInUp 0.15s ease both;
+    }
+    @keyframes fadeInUp { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+    .search-result-item:hover {
+      border-color: var(--color-accent);
+      box-shadow: var(--shadow-card-hover);
+      transform: translateY(-1px);
+    }
+    .search-result-icon {
+      width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--color-surface);
+    }
+    .search-result-icon img { width: 18px; height: 18px; }
+    .search-result-body { flex: 1; min-width: 0; }
+    .search-result-name {
+      font-size: 0.875rem; font-weight: 500; color: var(--color-text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .search-result-name mark {
+      background: rgba(0,120,212,0.14); color: var(--color-accent);
+      border-radius: 2px; padding: 0 2px; font-style: normal; font-weight: 600;
+    }
+    .search-result-meta {
+      font-size: 0.75rem; color: var(--color-text-tertiary); margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .search-result-meta mark {
+      background: rgba(0,120,212,0.1); color: var(--color-accent);
+      border-radius: 2px; padding: 0 2px; font-style: normal;
+    }
+    .search-result-arrow { color: var(--color-text-tertiary); flex-shrink: 0; font-size: 0.875rem; }
   </style>
 </head>
 <body>
@@ -817,13 +865,27 @@
           <h1 class="page-title">${escHtml(titleText)}</h1>
         </div>`;
 
-      const sectionsHtml = sections.map(section => renderSection(section)).join('');
-
-      const allEmpty = sections.every(s => s.links.length === 0);
       const banner = renderAnnouncementBanner();
-      container.innerHTML = banner + header + (allEmpty && searchQuery
-        ? `<div class="empty-state"><div class="empty-state-icon">🔍</div><p class="empty-state-text">No links match "<strong>${escHtml(searchQuery)}</strong>"</p></div>`
-        : sectionsHtml);
+
+      if (searchQuery) {
+        // Flat search results across all visible sections
+        const allResults = sections.flatMap(s =>
+          s.links.map(l => ({ ...l, collectionName: s.name, collectionIcon: s.icon }))
+        );
+        if (allResults.length === 0) {
+          container.innerHTML = banner + header +
+            `<div class="empty-state"><div class="empty-state-icon">🔍</div><p class="empty-state-text">No links match "<strong>${escHtml(searchQuery)}</strong>"</p></div>`;
+        } else {
+          const resultsHtml = allResults.map((r, i) => renderSearchResult(r, i)).join('');
+          container.innerHTML = banner + header +
+            `<p class="search-results-header">${allResults.length} result${allResults.length !== 1 ? 's' : ''} for "<strong>${escHtml(searchQuery)}</strong>"</p>` +
+            `<div class="search-results">${resultsHtml}</div>`;
+        }
+      } else {
+        const sectionsHtml = sections.map(section => renderSection(section)).join('');
+        const allEmpty = sections.every(s => s.links.length === 0);
+        container.innerHTML = banner + header + (allEmpty ? '' : sectionsHtml);
+      }
 
       focusedCardIndex = -1;
     }
@@ -903,6 +965,44 @@
         </li>`;
     }
 
+    // ── Search helpers ───────────────────────────────────────────────────
+    function highlight(text, query) {
+      if (!query) return escHtml(text);
+      const lc = text.toLowerCase();
+      const lcq = query.toLowerCase();
+      let result = '', pos = 0, idx;
+      while ((idx = lc.indexOf(lcq, pos)) !== -1) {
+        result += escHtml(text.slice(pos, idx));
+        result += `<mark>${escHtml(text.slice(idx, idx + query.length))}</mark>`;
+        pos = idx + query.length;
+      }
+      return result + escHtml(text.slice(pos));
+    }
+
+    function renderSearchResult(link, animIdx) {
+      let innerIcon = '';
+      if (link.icon && window.ICONS && window.ICONS[link.icon]) {
+        innerIcon = window.renderIcon(link.icon, 18);
+      } else if (link.icon) {
+        innerIcon = `<span style="font-size:17px;line-height:1">${escHtml(link.icon)}</span>`;
+      } else {
+        const fav = faviconUrl(link.url);
+        if (fav) innerIcon = `<img src="${fav}" alt="" onerror="this.style.display='none'">`;
+      }
+      const nameHtml = highlight(link.name, searchQuery);
+      const desc = link.description ? link.description.slice(0, 80) + (link.description.length > 80 ? '…' : '') : '';
+      const descHtml = desc ? ' · ' + highlight(desc, searchQuery) : '';
+      return `
+        <a class="search-result-item" href="${escHtml(link.url)}" target="_blank" rel="noopener noreferrer" style="animation-delay:${animIdx * 25}ms">
+          <div class="search-result-icon">${innerIcon}</div>
+          <div class="search-result-body">
+            <div class="search-result-name">${nameHtml}</div>
+            <div class="search-result-meta">${escHtml(link.collectionIcon || '')} ${escHtml(link.collectionName)}${descHtml}</div>
+          </div>
+          <span class="search-result-arrow">→</span>
+        </a>`;
+    }
+
     // ── Search ───────────────────────────────────────────────────────────
     function setupSearch() {
       const input = document.getElementById('search-input');
@@ -910,7 +1010,7 @@
 
       document.addEventListener('keydown', e => {
         const focused = document.activeElement === input;
-        if (e.key === '/' && !focused) { e.preventDefault(); input.focus(); return; }
+        if ((e.key === '/' && !focused) || (e.key === 'k' && (e.ctrlKey || e.metaKey))) { e.preventDefault(); input.focus(); return; }
         if (e.key === 'Escape' && focused) { input.blur(); searchQuery = ''; input.value = ''; renderContent(); return; }
 
         const cards = Array.from(document.querySelectorAll('.card'));
