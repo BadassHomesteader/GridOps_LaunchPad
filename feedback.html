@@ -196,7 +196,6 @@
         <button class="filter-btn active" data-filter="all" onclick="setStatusView('all')">All</button>
         <button class="filter-btn" data-filter="open" onclick="setStatusView('open')">Open</button>
         <button class="filter-btn" data-filter="in_progress" onclick="setStatusView('in_progress')">In Progress</button>
-        <button class="filter-btn" data-filter="resolved" onclick="setStatusView('resolved')">Resolved</button>
         <button class="filter-btn" data-filter="closed" onclick="setStatusView('closed')">Closed</button>
       </div>
       <button class="btn primary" onclick="openFeedbackModal()">New Feedback</button>
@@ -252,7 +251,7 @@
             <select class="detail-select" id="dp-status-select">
               <option value="open">Open</option>
               <option value="in_progress">In Progress</option>
-              <option value="resolved">Resolved</option>
+
               <option value="closed">Closed</option>
             </select>
             <button class="btn primary" onclick="saveDetail()">Save</button>
@@ -480,7 +479,7 @@
 
     // ── Helpers ──
     function statusLabel(s) {
-      return { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed' }[s] || s;
+      return { open: 'Open', in_progress: 'In Progress', closed: 'Closed' }[s] || s;
     }
     function formatDate(iso) {
       if (!iso) return '';
