@@ -16,6 +16,7 @@
       --green: #16a34a; --green-dim: rgba(22,163,74,0.1);
       --orange: #d97706; --orange-dim: rgba(217,119,6,0.1);
       --row-hover: rgba(0,120,212,0.04);
+      --header-bg: #eaeff5;
       --font-mono: 'IBM Plex Mono', monospace; --font-sans: 'IBM Plex Sans', sans-serif;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -42,22 +43,18 @@
 
     .main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 20px 24px; }
 
-    .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-shrink: 0; }
-    .toolbar-title { font-size: 14px; font-weight: 600; }
-    .filter-group { display: flex; gap: 6px; flex: 1; }
-    .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); padding: 4px 12px; border-radius: 20px; cursor: pointer; font-family: var(--font-sans); font-size: 12px; font-weight: 500; transition: all 0.15s; }
-    .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .count-badge { background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); padding: 4px 10px; border-radius: 4px; font-size: 12px; }
+    /* Toolbar */
+    .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-shrink: 0; flex-wrap: wrap; }
+    .toolbar-title { font-size: 14px; font-weight: 600; margin-right: auto; }
+    .btn { padding: 6px 14px; border-radius: 4px; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--text-dim); transition: all 0.15s; white-space: nowrap; }
+    .btn:hover { background: var(--border); color: var(--text); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    .btn.primary:hover { background: #005a9e; }
+    .btn.danger { color: var(--danger); }
+    .btn.danger:hover { background: var(--danger-dim); border-color: var(--danger); }
 
-    .table-wrap { flex: 1; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
-    table { width: 100%; border-collapse: collapse; }
-    th { position: sticky; top: 0; background: #eaeff5; border-bottom: 2px solid var(--border); padding: 8px 12px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); text-align: left; z-index: 1; }
-    td { border-bottom: 1px solid var(--border); padding: 10px 12px; font-size: 12px; vertical-align: top; }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: var(--row-hover); cursor: pointer; }
-
-    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    /* Feedback badges */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
     .badge-open { background: var(--accent-dim); color: var(--accent); }
     .badge-in_progress { background: var(--orange-dim); color: var(--orange); }
     .badge-resolved { background: var(--green-dim); color: var(--green); }
@@ -65,13 +62,70 @@
     .badge-bug { background: var(--danger-dim); color: var(--danger); }
     .badge-feature { background: var(--accent-dim); color: var(--accent); }
     .badge-general { background: var(--surface2); color: var(--text-dim); }
-    .badge-high { background: var(--danger-dim); color: var(--danger); }
-    .badge-medium { background: var(--orange-dim); color: var(--orange); }
-    .badge-low { background: var(--surface2); color: var(--text-muted); }
+    .badge-question { background: var(--surface2); color: var(--text-dim); }
+    .badge-critical { background: var(--danger); color: #fff; }
+    .badge-high { background: #e53e3e; color: #fff; }
+    .badge-medium { background: var(--orange); color: #fff; }
+    .badge-low { background: var(--text-muted); color: #fff; }
 
-    .title-cell { font-weight: 500; color: var(--text); }
-    .meta-cell { color: var(--text-muted); font-size: 11px; }
-    .empty-state { text-align: center; padding: 48px; color: var(--text-muted); font-size: 13px; }
+    /* Data table */
+    .datatable-container { overflow-y: auto; flex: 1; }
+    .datatable-wrapper { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+    .datatable-table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: 100%; }
+    .datatable-table th { background: var(--header-bg); position: sticky; top: 0; z-index: 2; color: var(--text-dim); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 12px; border-bottom: 2px solid var(--border); cursor: pointer; user-select: none; white-space: nowrap; text-align: left; }
+    .datatable-table th:hover { background: var(--surface2); }
+    .datatable-table td { padding: 10px 12px; border-bottom: 1px solid var(--surface2); font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+    .datatable-table tbody tr { transition: background 0.1s; cursor: pointer; }
+    .datatable-table tbody tr:hover { background: var(--row-hover); }
+    .col-resize { position: absolute; top: 0; right: -3px; width: 6px; height: 100%; cursor: col-resize; z-index: 6; }
+    .col-resize:hover, .col-resize.active { background: var(--accent); opacity: 0.4; }
+    .filter-row th { background: var(--surface2); padding: 6px 4px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 3; cursor: default; }
+    .datatable-table thead tr:nth-child(2) th { top: 34px; z-index: 2; }
+    .col-filter-input, .col-filter-select { width: 100%; box-sizing: border-box; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px; color: var(--text); background: var(--surface); outline: none; transition: border-color 0.15s; }
+    .col-filter-input:focus, .col-filter-select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,120,212,0.15); }
+    .col-filter-input::placeholder { color: var(--text-muted); }
+    .col-filter-multi { position: relative; width: 100%; }
+    .col-filter-multi-btn { width: 100%; box-sizing: border-box; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px; color: var(--text); background: var(--surface); cursor: pointer; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .col-filter-multi-btn:hover { border-color: var(--border-light); }
+    .col-filter-multi-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .col-filter-multi-dd { display: none; position: absolute; top: calc(100% + 2px); left: 0; min-width: 100%; max-height: 60vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); z-index: 50; padding: 4px 0; }
+    .col-filter-multi-dd.show { display: block; }
+    .col-filter-multi-item { display: flex; align-items: center; gap: 6px; padding: 3px 8px; font-size: 11px; color: var(--text-dim); cursor: pointer; white-space: nowrap; }
+    .col-filter-multi-item:hover { background: var(--surface2); }
+    .col-filter-multi-item input[type="checkbox"] { margin: 0; cursor: pointer; }
+    .col-filter-multi-all { border-bottom: 1px solid var(--border); margin-bottom: 2px; padding-bottom: 4px; font-weight: 600; color: var(--text); }
+    .filter-pills-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 0 4px; }
+    .filter-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; font-size: 11px; font-weight: 500; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,120,212,0.3); border-radius: 9999px; white-space: nowrap; }
+    .filter-pill-label { color: var(--accent); }
+    .filter-pill-x { background: none; border: none; cursor: pointer; color: var(--accent); padding: 0; margin-left: 2px; font-size: 14px; line-height: 1; opacity: 0.6; }
+    .filter-pill-x:hover { opacity: 1; }
+    .filter-clear-all { font-size: 11px; font-weight: 500; color: var(--text-dim); background: none; border: 1px solid var(--border); border-radius: 9999px; padding: 2px 10px; cursor: pointer; }
+    .filter-clear-all:hover { background: var(--surface2); color: var(--text); }
+    .col-picker-wrap { position: relative; }
+    .col-picker-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 14px; cursor: pointer; color: var(--text-dim); transition: all 0.15s; }
+    .col-picker-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--border-light); }
+    .col-picker-dropdown { display: none; position: absolute; top: calc(100% + 4px); right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); min-width: 180px; z-index: 200; padding: 6px 0; }
+    .col-picker-dropdown.show { display: block; }
+    .col-picker-item { display: flex; align-items: center; gap: 8px; padding: 6px 14px; cursor: pointer; font-size: 12px; color: var(--text); user-select: none; }
+    .col-picker-item:hover { background: var(--surface2); }
+    .col-picker-item.disabled { opacity: 0.45; cursor: default; }
+    .col-picker-item input[type="checkbox"] { accent-color: var(--accent); }
+    .col-picker-handle { cursor: grab; color: var(--text-muted); font-size: 14px; line-height: 1; padding: 0 2px; }
+    .col-picker-item.dragging { opacity: 0.4; }
+    .col-picker-item.drag-over { border-top: 2px solid var(--accent); }
+    .export-csv-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; cursor: pointer; color: var(--text-dim); display: flex; align-items: center; justify-content: center; }
+    .export-csv-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--border-light); }
+    .row-actions-btn { background: none; border: none; cursor: pointer; color: var(--text-dim); font-size: 16px; padding: 2px 6px; border-radius: 4px; }
+    .row-actions-btn:hover { background: var(--surface2); color: var(--text); }
+
+    /* Pagination */
+    .datatable-bottom { padding: 12px 0 0 0; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; gap: 8px; }
+    .datatable-bottom .datatable-info { order: 1; }
+    .datatable-bottom .datatable-pagination { order: 2; }
+    .datatable-bottom .datatable-dropdown { order: 3; margin-left: auto; }
+    .datatable-pagination .datatable-pagination-list { display: flex; gap: 4px; list-style: none; margin: 0; padding: 0; }
+    .datatable-pagination .datatable-pagination-list li a, .datatable-pagination .datatable-pagination-list li button { padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dim); cursor: pointer; font-size: 12px; text-decoration: none; }
+    .datatable-pagination .datatable-pagination-list li.datatable-active a, .datatable-pagination .datatable-pagination-list li.datatable-active button { background: var(--accent); color: #fff; border-color: var(--accent); }
 
     /* Detail panel */
     .detail-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; }
@@ -90,12 +144,6 @@
     .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding-top: 12px; border-top: 1px solid var(--border); }
     .detail-label-inline { font-size: 11px; color: var(--text-dim); font-weight: 500; }
     select.detail-select { padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--font-sans); font-size: 12px; color: var(--text); background: var(--surface); cursor: pointer; }
-    .btn { padding: 6px 14px; border-radius: 4px; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--text-dim); transition: all 0.15s; }
-    .btn:hover { background: var(--border); color: var(--text); }
-    .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
-    .btn.primary:hover { background: #005a9e; }
-    .btn.danger { color: var(--danger); }
-    .btn.danger:hover { background: var(--danger-dim); border-color: var(--danger); }
     .note-input { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--font-sans); font-size: 12px; color: var(--text); background: var(--surface); resize: vertical; min-height: 60px; margin-bottom: 10px; }
     .note-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,120,212,0.15); }
 
@@ -116,6 +164,7 @@
     .toast { position: fixed; bottom: 20px; right: 20px; background: var(--text); color: white; padding: 10px 16px; border-radius: 6px; font-size: 12px; font-weight: 500; z-index: 999; display: none; animation: slideUp 0.2s ease; }
     @keyframes slideUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
   </style>
+  <style id="colWidthStyle-feedback"></style>
 </head>
 <body>
   <div class="header">
@@ -137,32 +186,12 @@
   <div id="loading" class="state-msg"><h2>Loading...</h2></div>
 
   <div class="main" id="main-ui" style="display:none">
-    <div class="toolbar">
+    <div class="toolbar" id="feedback-toolbar">
       <div class="toolbar-title" id="toolbar-title">My Feedback</div>
-      <div class="filter-group">
-        <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
-        <button class="filter-btn" data-filter="open" onclick="setFilter('open')">Open</button>
-        <button class="filter-btn" data-filter="in_progress" onclick="setFilter('in_progress')">In Progress</button>
-        <button class="filter-btn" data-filter="resolved" onclick="setFilter('resolved')">Resolved</button>
-        <button class="filter-btn" data-filter="closed" onclick="setFilter('closed')">Closed</button>
-      </div>
-      <div class="count-badge" id="count-badge">0 items</div>
       <button class="btn primary" onclick="openFeedbackModal()">New Feedback</button>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:40%">Title</th>
-            <th>Type</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>Submitted By</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody id="feedback-tbody"></tbody>
-      </table>
+    <div id="feedbackTableWrap">
+      <table id="feedback-table"></table>
     </div>
   </div>
 
@@ -276,6 +305,7 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    // ── Auth ──
     const MSAL_CONFIG = {
       auth: { clientId: 'f6fd7b3b-9232-4f47-b244-7a589e0f9289', authority: 'https://login.microsoftonline.com/common', redirectUri: window.location.origin },
       cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: false }
@@ -283,6 +313,8 @@
     const TOKEN_REQUEST = { scopes: ['openid', 'profile', 'email', 'User.Read'] };
     let msalInstance, authToken;
     let userRole = '';
+    let allItems = [];
+    let activeItemId = null;
 
     async function initAuth() {
       if (typeof msal === 'undefined') throw new Error('Auth library failed to load. Check network and refresh.');
@@ -307,10 +339,7 @@
     async function apiPut(p, b) { const r = await fetch('/api' + p, { method: 'PUT', headers: hdrs(), body: JSON.stringify(b) }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
     async function apiDel(p) { const r = await fetch('/api' + p, { method: 'DELETE', headers: hdrs() }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
 
-    let allItems = [];
-    let activeFilter = 'all';
-    let activeItemId = null;
-
+    // ── Boot ──
     async function boot() {
       try {
         const me = await apiGet('/me');
@@ -340,45 +369,10 @@
     async function loadFeedback() {
       const data = await apiGet('/feedback');
       allItems = data.items || [];
-      renderTable();
+      FeedbackTable.init(allItems);
     }
 
-    function setFilter(f) {
-      activeFilter = f;
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
-      renderTable();
-    }
-
-    function filtered() {
-      return activeFilter === 'all' ? allItems : allItems.filter(i => i.status === activeFilter);
-    }
-
-    function renderTable() {
-      const items = filtered();
-      const badge = document.getElementById('count-badge');
-      badge.textContent = `${items.length} item${items.length !== 1 ? 's' : ''}`;
-      const tbody = document.getElementById('feedback-tbody');
-      if (items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No feedback here yet.</div></td></tr>`;
-        return;
-      }
-      tbody.innerHTML = items.map(item => `
-        <tr onclick="openDetail('${item.id}')">
-          <td>
-            <div class="title-cell">${escHtml(item.title)}</div>
-            ${item.area ? `<div class="meta-cell">${escHtml(item.area)}</div>` : ''}
-          </td>
-          <td><span class="badge badge-${item.type || 'general'}">${escHtml(item.type || 'general')}</span></td>
-          <td><span class="badge badge-${item.priority || 'medium'}">${escHtml(item.priority || 'medium')}</span></td>
-          <td><span class="badge badge-${item.status}">${statusLabel(item.status)}</span></td>
-          <td>
-            <div>${escHtml(item.reportedBy || item.reportedByEmail || '')}</div>
-            <div class="meta-cell">${escHtml(item.reportedByEmail || '')}</div>
-          </td>
-          <td class="meta-cell">${formatDate(item.createdAt)}</td>
-        </tr>`).join('');
-    }
-
+    // ── Detail panel ──
     function openDetail(id) {
       const item = allItems.find(i => i.id === id);
       if (!item) return;
@@ -411,7 +405,7 @@
         const updated = await apiPut(`/feedback/${activeItemId}`, { status, note });
         const idx = allItems.findIndex(i => i.id === activeItemId);
         if (idx >= 0) allItems[idx] = { ...allItems[idx], ...updated };
-        renderTable();
+        FeedbackTable.init(allItems);
         closeDetail();
         toast('Feedback updated');
       } catch (err) { alert('Error: ' + err.message); }
@@ -422,7 +416,7 @@
       try {
         await apiDel(`/feedback/${activeItemId}`);
         allItems = allItems.filter(i => i.id !== activeItemId);
-        renderTable();
+        FeedbackTable.init(allItems);
         closeDetail();
         toast('Deleted');
       } catch (err) { alert('Error: ' + err.message); }
@@ -440,10 +434,7 @@
       setTimeout(() => document.getElementById('fb-title').focus(), 80);
       dlg.onclick = e => { if (e.target === dlg) dlg.close(); };
     }
-
-    function closeFeedbackModal() {
-      document.getElementById('feedback-dialog').close();
-    }
+    function closeFeedbackModal() { document.getElementById('feedback-dialog').close(); }
 
     async function submitFeedback() {
       const title = document.getElementById('fb-title').value.trim();
@@ -459,7 +450,7 @@
           description: document.getElementById('fb-description').value.trim()
         });
         allItems.unshift(created);
-        renderTable();
+        FeedbackTable.init(allItems);
         closeFeedbackModal();
         toast('Thanks for your feedback!');
       } catch (err) {
@@ -469,28 +460,486 @@
       }
     }
 
+    // ── Helpers ──
     function statusLabel(s) {
       return { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed' }[s] || s;
     }
-
     function formatDate(iso) {
       if (!iso) return '';
       return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
-
-    function escHtml(str) {
-      if (!str) return '';
-      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
     function toast(msg) {
       const el = document.getElementById('toast');
-      el.textContent = msg;
-      el.style.display = 'block';
+      el.textContent = msg; el.style.display = 'block';
       clearTimeout(el._timer);
       el._timer = setTimeout(() => { el.style.display = 'none'; }, 2000);
     }
 
+    // ── FeedbackTable IIFE ──
+    var FeedbackTable = (function() {
+      'use strict';
+      var TABLE_ID = 'feedback-table';
+      var TOOLBAR_ID = 'feedback-toolbar';
+      var STYLE_ID = 'colWidthStyle-feedback';
+      var LS_WIDTHS = 'lp_feedback_col_widths';
+      var LS_VISIBILITY = 'lp_feedback_col_visibility';
+      var LS_ORDER = 'lp_feedback_col_order';
+      var FILTER_PREFIX = 'lp-fb-filter-';
+
+      var COL_KEYS         = ['title','type','priority','status','area','reportedBy','date'];
+      var COL_NAMES        = ['Title','Type','Priority','Status','Area','Reported By','Date'];
+      var COL_FILTER_TYPES = ['text','select','select','select','select','text','text'];
+      var DEFAULT_COL_WIDTHS = { title:280, type:140, priority:100, status:120, area:130, reportedBy:160, date:110 };
+      var LOCKED_COLS = ['title'];
+
+      var dataCache = [], filteredData = [], filterValues = {};
+      var currentPage = 1, itemsPerPage = 25, sortCol = -1, sortDir = 'asc', filterTimeout = null;
+      var colWidths = {}, colVisibility = {}, colOrder = [];
+      var colPickerRendered = false, exportBtnRendered = false, colDragSrcIndex = null;
+
+      var PILL_X_SVG = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>';
+
+      function esc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+      function getColumnValue(rec, ci) {
+        switch(ci) {
+          case 0: return rec.title || '';
+          case 1: return rec.type || '';
+          case 2: return rec.priority || '';
+          case 3: return rec.status || '';
+          case 4: return rec.area || '';
+          case 5: return rec.reportedBy || '';
+          case 6: return rec.createdAt ? new Date(rec.createdAt).toLocaleDateString() : '';
+          default: return '';
+        }
+      }
+
+      function applyColWidths() {
+        var css = '';
+        COL_KEYS.forEach(function(k) {
+          var rules = '';
+          if (colWidths[k]) rules += 'width:' + colWidths[k] + 'px;';
+          if (!colVisibility[k]) rules += 'display:none;';
+          if (rules) css += '.col-' + k + '{' + rules + '}\n';
+        });
+        var el = document.getElementById(STYLE_ID);
+        if (el) el.textContent = css;
+      }
+
+      function loadColWidths()    { try { var s = localStorage.getItem(LS_WIDTHS);     if (s) { var sv = JSON.parse(s); Object.keys(sv).forEach(function(k){ colWidths[k] = sv[k]; }); } } catch(e){} }
+      function saveColWidths()    { try { localStorage.setItem(LS_WIDTHS, JSON.stringify(colWidths)); } catch(e){} }
+      function loadColVisibility(){ try { var s = localStorage.getItem(LS_VISIBILITY); if (s) { var sv = JSON.parse(s); Object.keys(sv).forEach(function(k){ colVisibility[k] = sv[k]; }); } } catch(e){} LOCKED_COLS.forEach(function(k){ colVisibility[k]=true; }); }
+      function saveColVisibility(){ try { localStorage.setItem(LS_VISIBILITY, JSON.stringify(colVisibility)); } catch(e){} }
+      function loadColOrder() {
+        try {
+          var s = localStorage.getItem(LS_ORDER);
+          if (s) { var sv = JSON.parse(s); if (Array.isArray(sv) && sv.length === COL_KEYS.length) { var ck = sv.slice().sort(function(a,b){return a-b;}); var ok = true; for(var i=0;i<ck.length;i++){if(ck[i]!==i){ok=false;break;}} if(ok) colOrder = sv; } }
+        } catch(e){}
+      }
+      function saveColOrder() { try { localStorage.setItem(LS_ORDER, JSON.stringify(colOrder)); } catch(e){} }
+
+      function initColResize() {
+        document.querySelectorAll('#'+TABLE_ID+' .col-resize').forEach(function(handle) {
+          handle.addEventListener('mousedown', function(e) {
+            e.preventDefault(); e.stopPropagation();
+            var col = handle.dataset.col, th = handle.parentElement, startX = e.clientX, startW = th.offsetWidth;
+            handle.classList.add('active');
+            document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none';
+            var onMove = function(ev){ colWidths[col] = Math.max(30, startW + ev.clientX - startX); applyColWidths(); };
+            var onUp = function(){ handle.classList.remove('active'); document.body.style.cursor=''; document.body.style.userSelect=''; document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); saveColWidths(); };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+          });
+          handle.addEventListener('dblclick', function(e) {
+            e.preventDefault(); e.stopPropagation();
+            colWidths[handle.dataset.col] = DEFAULT_COL_WIDTHS[handle.dataset.col] || 100;
+            applyColWidths(); saveColWidths();
+          });
+        });
+      }
+
+      function renderColPicker() {
+        var toolbar = document.getElementById(TOOLBAR_ID);
+        if (!toolbar || colPickerRendered) return;
+        colPickerRendered = true;
+        var wrap = document.createElement('div');
+        wrap.className = 'col-picker-wrap';
+        wrap.innerHTML = '<button class="col-picker-btn" title="Show/hide columns">&#9881;</button><div class="col-picker-dropdown" id="lp-col-picker-dd"></div>';
+        toolbar.appendChild(wrap);
+        wrap.querySelector('.col-picker-btn').addEventListener('click', function(e) {
+          e.stopPropagation();
+          var dd = document.getElementById('lp-col-picker-dd');
+          if (!dd) return;
+          dd.classList.toggle('show');
+          if (dd.classList.contains('show')) buildColPickerItems(dd);
+        });
+        document.addEventListener('click', function(e) {
+          var dd = document.getElementById('lp-col-picker-dd');
+          if (dd && dd.classList.contains('show') && !wrap.contains(e.target)) dd.classList.remove('show');
+        });
+      }
+
+      function buildColPickerItems(dd) {
+        dd.innerHTML = '';
+        for (var oi = 0; oi < colOrder.length; oi++) {
+          var ci = colOrder[oi], key = COL_KEYS[ci], locked = LOCKED_COLS.indexOf(key) !== -1;
+          var row = document.createElement('div');
+          row.className = 'col-picker-item' + (locked ? ' disabled' : '');
+          row.draggable = true; row.dataset.orderIndex = oi;
+          var handle = document.createElement('span'); handle.className = 'col-picker-handle'; handle.textContent = '\u2261';
+          var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = colVisibility[key]; cb.disabled = locked; cb.dataset.col = key;
+          cb.addEventListener('change', function(){ colVisibility[this.dataset.col] = this.checked; saveColVisibility(); applyColWidths(); });
+          var span = document.createElement('span'); span.textContent = COL_NAMES[ci];
+          row.appendChild(handle); row.appendChild(cb); row.appendChild(span);
+          row.addEventListener('dragstart', function(e){ colDragSrcIndex = parseInt(this.dataset.orderIndex); this.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+          row.addEventListener('dragend', function(){ this.classList.remove('dragging'); colDragSrcIndex = null; });
+          row.addEventListener('dragover', function(e){ e.preventDefault(); e.dataTransfer.dropEffect = 'move'; this.classList.add('drag-over'); });
+          row.addEventListener('dragleave', function(){ this.classList.remove('drag-over'); });
+          row.addEventListener('drop', function(e){
+            e.preventDefault(); this.classList.remove('drag-over');
+            var ti = parseInt(this.dataset.orderIndex);
+            if (colDragSrcIndex !== null && colDragSrcIndex !== ti) {
+              var moved = colOrder.splice(colDragSrcIndex, 1)[0];
+              colOrder.splice(ti, 0, moved);
+              saveColOrder(); buildColPickerItems(dd); buildTable(filteredData);
+            }
+          });
+          dd.appendChild(row);
+        }
+      }
+
+      function renderExportBtn() {
+        var toolbar = document.getElementById(TOOLBAR_ID);
+        if (!toolbar || exportBtnRendered) return;
+        exportBtnRendered = true;
+        var btn = document.createElement('button');
+        btn.className = 'export-csv-btn'; btn.title = 'Export filtered data as CSV';
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+        btn.addEventListener('click', exportCSV);
+        var picker = toolbar.querySelector('.col-picker-wrap');
+        if (picker) toolbar.insertBefore(btn, picker); else toolbar.appendChild(btn);
+      }
+
+      function csvQuote(val) {
+        var s = String(val == null ? '' : val);
+        if (s.indexOf(',') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1) return '"' + s.replace(/"/g, '""') + '"';
+        return s;
+      }
+
+      function exportCSV() {
+        if (!filteredData || filteredData.length === 0) return;
+        var headers = [], colIndexes = [];
+        for (var oi = 0; oi < colOrder.length; oi++) {
+          var idx = colOrder[oi];
+          if (colVisibility[COL_KEYS[idx]]) { headers.push(COL_NAMES[idx]); colIndexes.push(idx); }
+        }
+        var lines = [headers.map(csvQuote).join(',')];
+        for (var r = 0; r < filteredData.length; r++) {
+          var vals = [];
+          for (var c = 0; c < colIndexes.length; c++) vals.push(csvQuote(getColumnValue(filteredData[r], colIndexes[c])));
+          lines.push(vals.join(','));
+        }
+        var blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        var d = new Date();
+        a.download = 'LaunchPad_Feedback_' + d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0') + '.csv';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+      }
+
+      function injectFilterRow(tableEl) {
+        var thead = tableEl.querySelector('thead');
+        if (!thead) return;
+        var filterRow = document.createElement('tr');
+        filterRow.className = 'filter-row';
+        for (var oi = 0; oi < colOrder.length; oi++) {
+          var ci = colOrder[oi];
+          var th = document.createElement('th');
+          th.className = 'col-' + COL_KEYS[ci];
+          if (COL_FILTER_TYPES[ci] === 'select') {
+            (function(colIdx) {
+              var wrap = document.createElement('div');
+              wrap.className = 'col-filter-multi'; wrap.id = FILTER_PREFIX + colIdx;
+              var btn = document.createElement('button');
+              btn.type = 'button'; btn.className = 'col-filter-multi-btn';
+              var dd = document.createElement('div');
+              dd.className = 'col-filter-multi-dd';
+              var vals = {};
+              for (var ai = 0; ai < dataCache.length; ai++) { var v = getColumnValue(dataCache[ai], colIdx); if (v) vals[v] = true; }
+              var sortedVals = Object.keys(vals).sort();
+              var checked = {};
+              var activeArr = Array.isArray(filterValues[colIdx]) ? filterValues[colIdx] : [];
+              if (activeArr.length === 0) sortedVals.forEach(function(v){ checked[v] = true; });
+              else activeArr.forEach(function(v){ checked[v] = true; });
+              var allItem = document.createElement('label');
+              allItem.className = 'col-filter-multi-item col-filter-multi-all';
+              var allCb = document.createElement('input');
+              allCb.type = 'checkbox'; allCb.checked = activeArr.length === 0;
+              allItem.appendChild(allCb); allItem.appendChild(document.createTextNode(' (Select All)'));
+              dd.appendChild(allItem);
+              var cbs = [];
+              sortedVals.forEach(function(v) {
+                var item = document.createElement('label');
+                item.className = 'col-filter-multi-item';
+                var cb = document.createElement('input');
+                cb.type = 'checkbox'; cb.value = v; cb.checked = !!checked[v]; cbs.push(cb);
+                item.appendChild(cb); item.appendChild(document.createTextNode(' ' + v));
+                dd.appendChild(item);
+              });
+              function updateFromCheckboxes() {
+                var allChecked = cbs.every(function(c){ return c.checked; });
+                allCb.checked = allChecked;
+                if (allChecked || cbs.length === 0) filterValues[colIdx] = '';
+                else { var sel = []; cbs.forEach(function(c){ if(c.checked) sel.push(c.value); }); filterValues[colIdx] = sel; }
+                updateBtnLabel();
+              }
+              allCb.addEventListener('change', function(){ cbs.forEach(function(c){ c.checked = allCb.checked; }); updateFromCheckboxes(); });
+              cbs.forEach(function(cb){ cb.addEventListener('change', updateFromCheckboxes); });
+              function updateBtnLabel() {
+                var arr = Array.isArray(filterValues[colIdx]) ? filterValues[colIdx] : [];
+                if (arr.length === 0) { btn.textContent = 'All'; btn.classList.remove('active'); }
+                else if (arr.length === 1) { btn.textContent = arr[0]; btn.classList.add('active'); }
+                else { btn.textContent = arr.length + ' selected'; btn.classList.add('active'); }
+              }
+              updateBtnLabel();
+              btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var wasOpen = dd.classList.contains('show');
+                document.querySelectorAll('.col-filter-multi-dd.show').forEach(function(d){ if(d!==dd) d.classList.remove('show'); });
+                dd.classList.toggle('show');
+                if (wasOpen) handleFilterChange(true);
+                if (dd.classList.contains('show')) { var rect = dd.getBoundingClientRect(); dd.style.maxHeight = Math.max(150, window.innerHeight - rect.top - 80) + 'px'; }
+              });
+              wrap.appendChild(btn); wrap.appendChild(dd); th.appendChild(wrap);
+            })(ci);
+          } else {
+            var inp = document.createElement('input');
+            inp.type = 'text'; inp.className = 'col-filter-input'; inp.id = FILTER_PREFIX + ci;
+            inp.placeholder = 'Filter\u2026'; inp.value = filterValues[ci] || '';
+            inp.addEventListener('input', function(){ handleFilterChange(false); });
+            th.appendChild(inp);
+          }
+          filterRow.appendChild(th);
+        }
+        var actionsTh = document.createElement('th'); actionsTh.className = 'col-actions'; filterRow.appendChild(actionsTh);
+        thead.insertBefore(filterRow, thead.firstChild);
+      }
+
+      function handleFilterChange(immediate) {
+        if (immediate) { clearTimeout(filterTimeout); applyFilters(); }
+        else { clearTimeout(filterTimeout); filterTimeout = setTimeout(applyFilters, 200); }
+      }
+
+      function applyFilters() {
+        for (var ci = 0; ci < COL_NAMES.length; ci++) {
+          var el = document.getElementById(FILTER_PREFIX + ci);
+          if (!el) continue;
+          if (COL_FILTER_TYPES[ci] !== 'select') filterValues[ci] = el.value;
+        }
+        var filtered = applyFiltersRaw();
+        currentPage = 1;
+        var focusId = document.activeElement ? document.activeElement.id : '';
+        var cursorPos = (document.activeElement && document.activeElement.selectionStart != null) ? document.activeElement.selectionStart : -1;
+        buildTable(filtered);
+        if (focusId) { var el = document.getElementById(focusId); if (el) { el.focus(); if (cursorPos >= 0 && el.setSelectionRange) el.setSelectionRange(cursorPos, cursorPos); } }
+      }
+
+      function refilter() { applyFilters(); }
+
+      function applyFiltersRaw() {
+        var filtered = dataCache;
+        for (var ci = 0; ci < COL_NAMES.length; ci++) {
+          var val = filterValues[ci];
+          if (!val) continue;
+          if (COL_FILTER_TYPES[ci] === 'select') {
+            var arr = Array.isArray(val) ? val : [val];
+            if (arr.length === 0) continue;
+            (function(colIdx, matchArr){ filtered = filtered.filter(function(a){ return matchArr.indexOf(getColumnValue(a, colIdx)) !== -1; }); })(ci, arr);
+          } else {
+            val = String(val).trim();
+            if (!val) continue;
+            (function(colIdx, term){ filtered = filtered.filter(function(a){ return getColumnValue(a, colIdx).toLowerCase().indexOf(term) !== -1; }); })(ci, val.toLowerCase());
+          }
+        }
+        return filtered;
+      }
+
+      function updateFilterPills() {
+        var toolbar = document.getElementById(TOOLBAR_ID);
+        if (!toolbar) return;
+        var bar = document.getElementById('lp-fb-filter-pills-bar');
+        if (!bar) { bar = document.createElement('div'); bar.id = 'lp-fb-filter-pills-bar'; bar.className = 'filter-pills-bar'; toolbar.parentNode.insertBefore(bar, toolbar.nextSibling); }
+        var activeCols = [];
+        for (var ci = 0; ci < COL_NAMES.length; ci++) { var fv = filterValues[ci]; if (Array.isArray(fv) ? fv.length > 0 : (fv && String(fv).trim())) activeCols.push(ci); }
+        if (activeCols.length === 0) { bar.innerHTML = ''; bar.style.display = 'none'; return; }
+        bar.style.display = 'flex';
+        var html = '';
+        for (var i = 0; i < activeCols.length; i++) {
+          var colIdx = activeCols[i];
+          var pillVal = filterValues[colIdx];
+          var pillText = Array.isArray(pillVal) ? pillVal.join(', ') : String(pillVal).trim();
+          html += '<span class="filter-pill" data-col="' + colIdx + '"><span class="filter-pill-label">' + esc(COL_NAMES[colIdx]) + ':</span> ' + esc(pillText);
+          html += '<button type="button" class="filter-pill-x" data-col="' + colIdx + '" title="Remove filter">' + PILL_X_SVG + '</button></span>';
+        }
+        html += '<button type="button" class="filter-clear-all" id="lp-fb-filter-clear-all">Clear All</button>';
+        bar.innerHTML = html;
+        bar.querySelectorAll('.filter-pill-x').forEach(function(btn) {
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var col = parseInt(this.dataset.col);
+            filterValues[col] = '';
+            var fEl = document.getElementById(FILTER_PREFIX + col);
+            if (fEl) {
+              if (COL_FILTER_TYPES[col] === 'select') { fEl.querySelectorAll('input[type="checkbox"]').forEach(function(cb){ cb.checked=true; }); var mbtn = fEl.querySelector('.col-filter-multi-btn'); if(mbtn){mbtn.textContent='All';mbtn.classList.remove('active');} }
+              else fEl.value = '';
+            }
+            refilter();
+          });
+        });
+        var clearAllBtn = document.getElementById('lp-fb-filter-clear-all');
+        if (clearAllBtn) {
+          clearAllBtn.addEventListener('click', function() {
+            filterValues = {};
+            for (var ci = 0; ci < COL_NAMES.length; ci++) {
+              var fEl = document.getElementById(FILTER_PREFIX + ci);
+              if (!fEl) continue;
+              if (COL_FILTER_TYPES[ci] === 'select') { fEl.querySelectorAll('input[type="checkbox"]').forEach(function(cb){cb.checked=true;}); var mbtn = fEl.querySelector('.col-filter-multi-btn'); if(mbtn){mbtn.textContent='All';mbtn.classList.remove('active');} }
+              else fEl.value = '';
+            }
+            refilter();
+          });
+        }
+      }
+
+      function renderTableBottom(total, start, end, totalPages) {
+        var wrapperEl = document.getElementById(TABLE_ID).closest('.datatable-wrapper');
+        if (!wrapperEl) return;
+        var bottom = wrapperEl.querySelector('.datatable-bottom');
+        if (!bottom) { bottom = document.createElement('div'); bottom.className = 'datatable-bottom'; wrapperEl.appendChild(bottom); }
+        var html = '<div class="datatable-info">' + (total > 0 ? 'Showing ' + start + ' to ' + end + ' of ' + total + ' records' : 'No records found') + '</div>';
+        if (totalPages > 1) {
+          html += '<nav class="datatable-pagination"><ul class="datatable-pagination-list">';
+          if (currentPage > 1) html += '<li><button type="button" data-page="' + (currentPage - 1) + '">&laquo;</button></li>';
+          var pStart = Math.max(1, currentPage - 3), pEnd = Math.min(totalPages, pStart + 6);
+          pStart = Math.max(1, pEnd - 6);
+          for (var p = pStart; p <= pEnd; p++) html += '<li class="' + (p === currentPage ? 'datatable-active' : '') + '"><button type="button" data-page="' + p + '">' + p + '</button></li>';
+          if (currentPage < totalPages) html += '<li><button type="button" data-page="' + (currentPage + 1) + '">&raquo;</button></li>';
+          html += '</ul></nav>';
+        }
+        html += '<div class="datatable-dropdown"><label><select id="lp-fb-items-per-page">';
+        [10, 25, 50, 100].forEach(function(n){ html += '<option value="' + n + '"' + (n === itemsPerPage ? ' selected' : '') + '>' + n + '</option>'; });
+        html += '</select> per page</label></div>';
+        bottom.innerHTML = html;
+        bottom.querySelectorAll('[data-page]').forEach(function(btn){ btn.addEventListener('click', function(){ currentPage = parseInt(this.dataset.page); buildTable(filteredData); }); });
+        var ppSel = document.getElementById('lp-fb-items-per-page');
+        if (ppSel) ppSel.addEventListener('change', function(){ itemsPerPage = parseInt(this.value); currentPage = 1; buildTable(filteredData); });
+      }
+
+      function renderCell(rec, ci) {
+        var val = getColumnValue(rec, ci);
+        if (ci === 1 && val) { var labels = { bug:'Bug', feature:'Feature Request', question:'Question', general:'General' }; return '<span class="badge badge-' + val + '">' + esc(labels[val]||val) + '</span>'; }
+        if (ci === 2 && val) { return '<span class="badge badge-' + val + '">' + esc(val) + '</span>'; }
+        if (ci === 3 && val) { return '<span class="badge badge-' + val + '">' + esc(statusLabel(val)) + '</span>'; }
+        return esc(val);
+      }
+
+      function buildTable(data) {
+        filteredData = data;
+        var tableEl = document.getElementById(TABLE_ID);
+        if (!tableEl) return;
+        if (!tableEl.closest('.datatable-wrapper')) {
+          var w = document.createElement('div'); w.className = 'datatable-wrapper';
+          var c = document.createElement('div'); c.className = 'datatable-container';
+          tableEl.parentNode.insertBefore(w, tableEl); w.appendChild(c); c.appendChild(tableEl);
+        }
+        if (!tableEl.classList.contains('datatable-table')) tableEl.classList.add('datatable-table');
+
+        var sorted = data;
+        if (sortCol >= 0) {
+          sorted = data.slice().sort(function(a, b) {
+            var va = getColumnValue(a, sortCol).toLowerCase(), vb = getColumnValue(b, sortCol).toLowerCase();
+            return sortDir === 'desc' ? vb.localeCompare(va) : va.localeCompare(vb);
+          });
+        }
+
+        var total = sorted.length;
+        var totalPages = Math.ceil(total / itemsPerPage) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+        var startIdx = (currentPage - 1) * itemsPerPage;
+        var endIdx = Math.min(startIdx + itemsPerPage, total);
+        var pageRows = sorted.slice(startIdx, endIdx);
+
+        var html = '<thead><tr>';
+        for (var oi = 0; oi < colOrder.length; oi++) {
+          var ci = colOrder[oi];
+          var sortInd = sortCol === ci ? (sortDir === 'asc' ? ' &#9650;' : ' &#9660;') : '';
+          html += '<th class="col-' + COL_KEYS[ci] + '" data-sort-col="' + ci + '">' + COL_NAMES[ci] + sortInd + '<div class="col-resize" data-col="' + COL_KEYS[ci] + '"></div></th>';
+        }
+        html += '<th class="col-actions"></th></tr></thead><tbody>';
+        for (var i = 0; i < pageRows.length; i++) {
+          var row = pageRows[i];
+          html += '<tr data-id="' + esc(row.id) + '">';
+          for (var oi2 = 0; oi2 < colOrder.length; oi2++) { var ci2 = colOrder[oi2]; html += '<td class="col-' + COL_KEYS[ci2] + '">' + renderCell(row, ci2) + '</td>'; }
+          html += '<td class="col-actions"><button class="row-actions-btn" data-edit-id="' + esc(row.id) + '" title="View">&#8230;</button></td></tr>';
+        }
+        if (pageRows.length === 0) html += '<tr><td colspan="' + (COL_NAMES.length + 1) + '" style="text-align:center;padding:20px;color:var(--text-muted);">No feedback yet.</td></tr>';
+        html += '</tbody>';
+        tableEl.innerHTML = html;
+
+        injectFilterRow(tableEl);
+
+        tableEl.querySelectorAll('thead tr:not(.filter-row) th[data-sort-col]').forEach(function(th) {
+          th.addEventListener('click', function(e) {
+            if (e.target.closest('.col-resize')) return;
+            var col = parseInt(this.dataset.sortCol);
+            if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+            else { sortCol = col; sortDir = 'asc'; }
+            buildTable(filteredData);
+          });
+        });
+
+        tableEl.querySelectorAll('[data-edit-id]').forEach(function(btn) {
+          btn.addEventListener('click', function(){ openDetail(this.dataset.editId); });
+        });
+        tableEl.querySelectorAll('tbody tr[data-id]').forEach(function(tr) {
+          tr.addEventListener('dblclick', function(){ openDetail(this.dataset.id); });
+        });
+
+        applyColWidths(); initColResize(); renderExportBtn(); renderColPicker();
+        updateFilterPills();
+        renderTableBottom(total, total > 0 ? startIdx + 1 : 0, endIdx, totalPages);
+      }
+
+      function init(feedback) {
+        var toolbar = document.getElementById(TOOLBAR_ID);
+        if (toolbar) toolbar.querySelectorAll('.export-csv-btn, .col-picker-wrap').forEach(function(el){ el.remove(); });
+        colPickerRendered = false; exportBtnRendered = false; filterValues = {};
+
+        if (!FeedbackTable._multiClickBound) {
+          FeedbackTable._multiClickBound = true;
+          document.addEventListener('click', function(e) {
+            if (!e.target.closest('.col-filter-multi')) {
+              var open = document.querySelectorAll('#'+TABLE_ID+' .col-filter-multi-dd.show');
+              if (open.length > 0) { open.forEach(function(d){ d.classList.remove('show'); }); handleFilterChange(true); }
+            }
+          });
+        }
+
+        currentPage = 1; sortCol = -1; sortDir = 'asc';
+        colWidths = {}; Object.keys(DEFAULT_COL_WIDTHS).forEach(function(k){ colWidths[k] = DEFAULT_COL_WIDTHS[k]; });
+        colVisibility = {}; COL_KEYS.forEach(function(k){ colVisibility[k] = true; });
+        colOrder = COL_KEYS.map(function(_, i){ return i; });
+        loadColWidths(); loadColVisibility(); loadColOrder();
+        dataCache = feedback;
+        buildTable(feedback);
+      }
+
+      return { init: init };
+    })();
+
+    // ── Event listeners ──
     document.getElementById('detail-overlay').addEventListener('click', e => {
       if (e.target === document.getElementById('detail-overlay')) closeDetail();
     });
