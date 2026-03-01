@@ -48,6 +48,10 @@
     .toolbar-title { font-size: 14px; font-weight: 600; margin-right: auto; }
     .btn { padding: 6px 14px; border-radius: 4px; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--text-dim); transition: all 0.15s; white-space: nowrap; }
     .btn:hover { background: var(--border); color: var(--text); }
+    .filter-group { display: flex; gap: 6px; flex: 1; }
+    .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); padding: 4px 12px; border-radius: 20px; cursor: pointer; font-family: var(--font-sans); font-size: 12px; font-weight: 500; transition: all 0.15s; }
+    .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
     .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
     .btn.primary:hover { background: #005a9e; }
     .btn.danger { color: var(--danger); }
@@ -188,6 +192,13 @@
   <div class="main" id="main-ui" style="display:none">
     <div class="toolbar" id="feedback-toolbar">
       <div class="toolbar-title" id="toolbar-title">My Feedback</div>
+      <div class="filter-group" id="status-filters">
+        <button class="filter-btn active" data-filter="all" onclick="setStatusView('all')">All</button>
+        <button class="filter-btn" data-filter="open" onclick="setStatusView('open')">Open</button>
+        <button class="filter-btn" data-filter="in_progress" onclick="setStatusView('in_progress')">In Progress</button>
+        <button class="filter-btn" data-filter="resolved" onclick="setStatusView('resolved')">Resolved</button>
+        <button class="filter-btn" data-filter="closed" onclick="setStatusView('closed')">Closed</button>
+      </div>
       <button class="btn primary" onclick="openFeedbackModal()">New Feedback</button>
     </div>
     <div id="feedbackTableWrap">
@@ -458,6 +469,13 @@
       } finally {
         btn.disabled = false; btn.textContent = 'Send';
       }
+    }
+
+    // ── Status quick-filter buttons ──
+    function setStatusView(status) {
+      document.querySelectorAll('#status-filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === status));
+      // Drive the table's status column filter (col index 3)
+      FeedbackTable.setStatusFilter(status === 'all' ? '' : [status]);
     }
 
     // ── Helpers ──
@@ -936,7 +954,29 @@
         buildTable(feedback);
       }
 
-      return { init: init };
+      function setStatusFilter(val) {
+        // status is col index 3
+        filterValues[3] = val;
+        // Update the multi-select UI if the filter row exists
+        var fEl = document.getElementById(FILTER_PREFIX + '3');
+        if (fEl) {
+          var arr = Array.isArray(val) ? val : [];
+          fEl.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+            if (cb.closest('.col-filter-multi-all')) { cb.checked = arr.length === 0; }
+            else { cb.checked = arr.length === 0 || arr.indexOf(cb.value) !== -1; }
+          });
+          var mbtn = fEl.querySelector('.col-filter-multi-btn');
+          if (mbtn) {
+            if (arr.length === 0) { mbtn.textContent = 'All'; mbtn.classList.remove('active'); }
+            else if (arr.length === 1) { mbtn.textContent = arr[0]; mbtn.classList.add('active'); }
+            else { mbtn.textContent = arr.length + ' selected'; mbtn.classList.add('active'); }
+          }
+        }
+        currentPage = 1;
+        buildTable(applyFiltersRaw());
+      }
+
+      return { init: init, setStatusFilter: setStatusFilter };
     })();
 
     // ── Event listeners ──
