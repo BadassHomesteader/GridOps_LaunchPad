@@ -10,7 +10,7 @@ function generateId() {
     return `fb-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
 }
 
-// GET /api/feedback — list all feedback (admin only)
+// GET /api/feedback — list feedback (admins see all, users see their own)
 app.http('listFeedback', {
     methods: ['GET'],
     authLevel: 'anonymous',
@@ -20,13 +20,16 @@ app.http('listFeedback', {
         if (!authResult.authorized) {
             return { status: authResult.status, jsonBody: { error: authResult.error } };
         }
-        if (authResult.user.role !== 'admin') {
-            return { status: 403, jsonBody: { error: 'Admin access required' } };
-        }
 
         const { data } = await readJSONWithETag(CONTAINER, FEEDBACK_PATH);
-        const items = (data?.items || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        return { status: 200, jsonBody: { items } };
+        let items = (data?.items || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // Non-admins only see their own feedback
+        if (authResult.user.role !== 'admin') {
+            items = items.filter(i => i.reportedByEmail === authResult.user.email);
+        }
+
+        return { status: 200, jsonBody: { items, role: authResult.user.role } };
     }
 });
 

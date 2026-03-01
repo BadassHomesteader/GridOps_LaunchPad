@@ -99,6 +99,20 @@
     .note-input { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--font-sans); font-size: 12px; color: var(--text); background: var(--surface); resize: vertical; min-height: 60px; margin-bottom: 10px; }
     .note-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,120,212,0.15); }
 
+    /* New Feedback dialog */
+    dialog#feedback-dialog { width: 90%; max-width: 560px; border-radius: 10px; border: 1px solid var(--border); padding: 0; box-shadow: 0 25px 50px rgba(0,0,0,0.25); position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); margin: 0; background: var(--surface); }
+    dialog#feedback-dialog::backdrop { background: rgba(15,23,42,0.45); backdrop-filter: blur(6px); }
+    .fb-header { display: flex; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); background: var(--surface2); border-radius: 10px 10px 0 0; }
+    .fb-header h3 { font-size: 1rem; font-weight: 600; margin: 0; flex: 1; }
+    .fb-body { padding: 1.25rem 1.5rem; max-height: 65vh; overflow-y: auto; }
+    .fb-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .fb-group { margin-bottom: 0.875rem; }
+    .fb-label { display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.3rem; }
+    .fb-input { width: 100%; padding: 0.5625rem 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; font: inherit; font-size: 0.875rem; color: var(--text); box-sizing: border-box; }
+    .fb-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,120,212,0.15); }
+    textarea.fb-input { min-height: 100px; resize: vertical; }
+    .fb-footer { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; padding: 0.875rem 1.5rem; border-top: 1px solid var(--border); background: var(--surface2); border-radius: 0 0 10px 10px; }
+
     .toast { position: fixed; bottom: 20px; right: 20px; background: var(--text); color: white; padding: 10px 16px; border-radius: 6px; font-size: 12px; font-weight: 500; z-index: 999; display: none; animation: slideUp 0.2s ease; }
     @keyframes slideUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
   </style>
@@ -109,21 +123,22 @@
     <div class="header-sep"></div>
     <div class="header-title">Feedback</div>
     <div class="header-spacer"></div>
-    <a href="users.html" class="back-link">Manage Users</a>
-    <div class="header-sep"></div>
-    <a href="admin.html" class="back-link">Collections</a>
-    <div class="header-sep"></div>
-    <a href="index.html" class="back-link">← Back to LaunchPad</a>
+    <span id="admin-links" style="display:none">
+      <a href="users.html" class="back-link">Manage Users</a>
+      <div class="header-sep" style="display:inline-block;vertical-align:middle;margin:0 4px"></div>
+      <a href="admin.html" class="back-link">Collections</a>
+      <div class="header-sep" style="display:inline-block;vertical-align:middle;margin:0 4px"></div>
+    </span>
+    <a href="index.html" class="back-link">&larr; Back to LaunchPad</a>
     <div class="header-sep"></div>
     <div id="auth-area"><button class="signin-btn" onclick="signIn()">Sign in</button></div>
   </div>
 
   <div id="loading" class="state-msg"><h2>Loading...</h2></div>
-  <div id="access-denied" class="state-msg" style="display:none"><h2>Access Denied</h2><p>Admin role required.</p></div>
 
   <div class="main" id="main-ui" style="display:none">
     <div class="toolbar">
-      <div class="toolbar-title">All Feedback</div>
+      <div class="toolbar-title" id="toolbar-title">My Feedback</div>
       <div class="filter-group">
         <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
         <button class="filter-btn" data-filter="open" onclick="setFilter('open')">Open</button>
@@ -132,6 +147,7 @@
         <button class="filter-btn" data-filter="closed" onclick="setFilter('closed')">Closed</button>
       </div>
       <div class="count-badge" id="count-badge">0 items</div>
+      <button class="btn primary" onclick="openFeedbackModal()">New Feedback</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -155,7 +171,7 @@
     <div class="detail-panel">
       <div class="detail-header">
         <div class="detail-title" id="dp-title"></div>
-        <button class="detail-close" onclick="closeDetail()">✕</button>
+        <button class="detail-close" onclick="closeDetail()">&#x2715;</button>
       </div>
       <div class="detail-body">
         <div class="detail-row">
@@ -188,22 +204,74 @@
         </div>
         <div class="detail-label" style="margin-bottom:6px">Description</div>
         <div class="detail-desc" id="dp-desc"></div>
-        <div class="detail-label" style="margin-bottom:6px">Admin Note</div>
-        <textarea class="note-input" id="dp-note" placeholder="Add an internal note..."></textarea>
-        <div class="detail-actions">
-          <span class="detail-label-inline">Status:</span>
-          <select class="detail-select" id="dp-status-select">
-            <option value="open">Open</option>
-            <option value="in_progress">In Progress</option>
-            <option value="resolved">Resolved</option>
-            <option value="closed">Closed</option>
-          </select>
-          <button class="btn primary" onclick="saveDetail()">Save</button>
-          <button class="btn danger" onclick="deleteDetail()">Delete</button>
+        <div id="admin-detail-controls" style="display:none">
+          <div class="detail-label" style="margin-bottom:6px">Admin Note</div>
+          <textarea class="note-input" id="dp-note" placeholder="Add an internal note..."></textarea>
+          <div class="detail-actions">
+            <span class="detail-label-inline">Status:</span>
+            <select class="detail-select" id="dp-status-select">
+              <option value="open">Open</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="closed">Closed</option>
+            </select>
+            <button class="btn primary" onclick="saveDetail()">Save</button>
+            <button class="btn danger" onclick="deleteDetail()">Delete</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- New Feedback dialog -->
+  <dialog id="feedback-dialog">
+    <div class="fb-header"><h3>New Feedback</h3></div>
+    <div class="fb-body">
+      <div class="fb-group">
+        <label class="fb-label">Title *</label>
+        <input class="fb-input" id="fb-title" type="text" placeholder="Brief summary..." required>
+      </div>
+      <div class="fb-row">
+        <div class="fb-group">
+          <label class="fb-label">Type</label>
+          <select class="fb-input" id="fb-type">
+            <option value="general">General</option>
+            <option value="bug">Bug</option>
+            <option value="feature">Feature Request</option>
+            <option value="question">Question</option>
+          </select>
+        </div>
+        <div class="fb-group">
+          <label class="fb-label">Priority</label>
+          <select class="fb-input" id="fb-priority">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+      </div>
+      <div class="fb-group">
+        <label class="fb-label">Area</label>
+        <select class="fb-input" id="fb-area">
+          <option value="">Select area...</option>
+          <option value="Links">Links</option>
+          <option value="Collections">Collections</option>
+          <option value="Navigation">Navigation</option>
+          <option value="My Links">My Links</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="fb-group">
+        <label class="fb-label">Description</label>
+        <textarea class="fb-input" id="fb-description" placeholder="Provide details..."></textarea>
+      </div>
+    </div>
+    <div class="fb-footer">
+      <button class="btn" onclick="closeFeedbackModal()">Cancel</button>
+      <button class="btn primary" id="fb-submit-btn" onclick="submitFeedback()">Send</button>
+    </div>
+  </dialog>
 
   <div class="toast" id="toast"></div>
 
@@ -214,6 +282,7 @@
     };
     const TOKEN_REQUEST = { scopes: ['openid', 'profile', 'email', 'User.Read'] };
     let msalInstance, authToken;
+    let userRole = '';
 
     async function initAuth() {
       if (typeof msal === 'undefined') throw new Error('Auth library failed to load. Check network and refresh.');
@@ -234,6 +303,7 @@
 
     function hdrs() { return { 'Content-Type': 'application/json', 'X-Auth-Token': authToken }; }
     async function apiGet(p) { const r = await fetch('/api' + p, { headers: hdrs() }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
+    async function apiPost(p, b) { const r = await fetch('/api' + p, { method: 'POST', headers: hdrs(), body: JSON.stringify(b) }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
     async function apiPut(p, b) { const r = await fetch('/api' + p, { method: 'PUT', headers: hdrs(), body: JSON.stringify(b) }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
     async function apiDel(p) { const r = await fetch('/api' + p, { method: 'DELETE', headers: hdrs() }); if (!r.ok) throw new Error(await r.text()); return r.json(); }
 
@@ -244,11 +314,7 @@
     async function boot() {
       try {
         const me = await apiGet('/me');
-        if (me.role !== 'admin') {
-          document.getElementById('loading').style.display = 'none';
-          document.getElementById('access-denied').style.display = 'flex';
-          return;
-        }
+        userRole = me.role;
         const initials = (me.name || me.email).split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
         document.getElementById('auth-area').innerHTML = `
           <div class="user-info">
@@ -256,6 +322,13 @@
             <span class="user-email">${me.email}</span>
             <button class="signout-btn" onclick="signOut()">Sign out</button>
           </div>`;
+
+        if (userRole === 'admin') {
+          document.getElementById('admin-links').style.display = '';
+          document.getElementById('admin-detail-controls').style.display = '';
+          document.getElementById('toolbar-title').textContent = 'All Feedback';
+        }
+
         await loadFeedback();
         document.getElementById('loading').style.display = 'none';
         document.getElementById('main-ui').style.display = 'flex';
@@ -314,12 +387,14 @@
       document.getElementById('dp-status').innerHTML = `<span class="badge badge-${item.status}">${statusLabel(item.status)}</span>`;
       document.getElementById('dp-type').innerHTML = `<span class="badge badge-${item.type || 'general'}">${item.type || 'general'}</span>`;
       document.getElementById('dp-priority').innerHTML = `<span class="badge badge-${item.priority || 'medium'}">${item.priority || 'medium'}</span>`;
-      document.getElementById('dp-area').textContent = item.area || '—';
+      document.getElementById('dp-area').textContent = item.area || '\u2014';
       document.getElementById('dp-reporter').textContent = `${item.reportedBy || ''} <${item.reportedByEmail || ''}>`;
       document.getElementById('dp-date').textContent = formatDate(item.createdAt);
       document.getElementById('dp-desc').textContent = item.description || '(no description)';
-      document.getElementById('dp-note').value = item.note || '';
-      document.getElementById('dp-status-select').value = item.status;
+      if (userRole === 'admin') {
+        document.getElementById('dp-note').value = item.note || '';
+        document.getElementById('dp-status-select').value = item.status;
+      }
       document.getElementById('detail-overlay').classList.add('active');
     }
 
@@ -353,6 +428,47 @@
       } catch (err) { alert('Error: ' + err.message); }
     }
 
+    // ── New Feedback modal ──
+    function openFeedbackModal() {
+      const dlg = document.getElementById('feedback-dialog');
+      document.getElementById('fb-title').value = '';
+      document.getElementById('fb-type').value = 'general';
+      document.getElementById('fb-priority').value = 'medium';
+      document.getElementById('fb-area').value = '';
+      document.getElementById('fb-description').value = '';
+      dlg.showModal();
+      setTimeout(() => document.getElementById('fb-title').focus(), 80);
+      dlg.onclick = e => { if (e.target === dlg) dlg.close(); };
+    }
+
+    function closeFeedbackModal() {
+      document.getElementById('feedback-dialog').close();
+    }
+
+    async function submitFeedback() {
+      const title = document.getElementById('fb-title').value.trim();
+      if (!title) { document.getElementById('fb-title').focus(); return; }
+      const btn = document.getElementById('fb-submit-btn');
+      btn.disabled = true; btn.textContent = 'Sending...';
+      try {
+        const created = await apiPost('/feedback', {
+          title,
+          type: document.getElementById('fb-type').value,
+          priority: document.getElementById('fb-priority').value,
+          area: document.getElementById('fb-area').value,
+          description: document.getElementById('fb-description').value.trim()
+        });
+        allItems.unshift(created);
+        renderTable();
+        closeFeedbackModal();
+        toast('Thanks for your feedback!');
+      } catch (err) {
+        alert('Failed to submit: ' + err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Send';
+      }
+    }
+
     function statusLabel(s) {
       return { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed' }[s] || s;
     }
@@ -377,6 +493,9 @@
 
     document.getElementById('detail-overlay').addEventListener('click', e => {
       if (e.target === document.getElementById('detail-overlay')) closeDetail();
+    });
+    document.getElementById('feedback-dialog').addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeFeedbackModal();
     });
 
     document.addEventListener('DOMContentLoaded', () => {
